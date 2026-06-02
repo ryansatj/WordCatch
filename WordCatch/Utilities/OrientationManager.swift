@@ -4,37 +4,41 @@
 //
 //  Created by Ryan Tjendana on 26/05/26.
 //
+//  Locks the app to a specific orientation. Works alongside the
+//  AppDelegate hook in WordCatchApp.swift — the delegate reads
+//  `mask` to tell iOS which orientations are currently allowed.
+//  Without that delegate, requestGeometryUpdate is silently ignored.
+//
 
-import Foundation
 import SwiftUI
+import UIKit
 
-class OrientationManager {
+final class OrientationManager {
 
     static let shared = OrientationManager()
 
+    //update
+    
+    // Current allowed orientations. Read by AppDelegate's
+    // supportedInterfaceOrientationsFor:.
+    var mask: UIInterfaceOrientationMask = .all
+
     func lockLandscape() {
-
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
-            return
-        }
-
-        windowScene.requestGeometryUpdate(
-            .iOS(interfaceOrientations: .landscape)
-        )
-
-        windowScene.keyWindow?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+        mask = .landscape
+        apply(.landscape)
     }
 
     func lockPortrait() {
+        mask = .portrait
+        apply(.portrait)
+    }
 
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
-            return
-        }
+    private func apply(_ orientations: UIInterfaceOrientationMask) {
+        guard let scene = UIApplication.shared.connectedScenes
+            .first as? UIWindowScene else { return }
 
-        windowScene.requestGeometryUpdate(
-            .iOS(interfaceOrientations: .portrait)
-        )
-
-        windowScene.keyWindow?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+        scene.requestGeometryUpdate(.iOS(interfaceOrientations: orientations))
+        scene.keyWindow?.rootViewController?
+            .setNeedsUpdateOfSupportedInterfaceOrientations()
     }
 }

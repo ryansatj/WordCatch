@@ -1,9 +1,10 @@
 //
-//  AppTypography.swift
+//  AppTyphography.swift
 //  WordCatch
 //
-//  Type scale for the app. Use these instead of inventing new sizes.
-//
+//  Created by Gung  on 26/05/26.
+
+
 
 import SwiftUI
 
