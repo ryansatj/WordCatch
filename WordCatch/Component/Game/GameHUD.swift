@@ -4,12 +4,6 @@
 //
 //  Created by Gung  on 29/05/26.
 //
-//  Contents:
-//    - PlayerScorePill   → score badge, themed in OrangeBrand / BrownBrand
-//    - PlayerDivider     → center vertical gradient (orange)
-//    - GameExitButton    → 3-second hold-to-exit with progress ring
-//    - GameTopBar        → composes the three above
-//
 
 import SwiftUI
 
@@ -18,7 +12,7 @@ import SwiftUI
 struct PlayerScorePill: View {
     let label: String
     let score: Int
-    let accent: Color  
+    let accent: Color
 
     var body: some View {
         HStack(spacing: 10) {
@@ -47,11 +41,7 @@ struct PlayerScorePill: View {
 struct PlayerDivider: View {
     var body: some View {
         LinearGradient(
-            colors: [
-    
-                Color("BrownBrand").opacity(1.0),
-            
-            ],
+            colors: [Color("BrownBrand").opacity(1.0)],
             startPoint: .top,
             endPoint: .bottom
         )
@@ -61,7 +51,41 @@ struct PlayerDivider: View {
     }
 }
 
-// MARK: - GameExitButton (hold 3s — "✕ Exit" pill with fill-from-left progress)
+// MARK: - RoundInfoPill
+
+struct RoundInfoPill: View {
+    let category: String
+    let remainingSeconds: Int
+
+    private var timeText: String {
+        let minutes = remainingSeconds / 60
+        let seconds = remainingSeconds % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text("Find \(category)")
+                .font(.system(size: 20, weight: .heavy, design: .rounded))
+                .foregroundColor(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            Text(timeText)
+                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .foregroundColor(Color("OrangeBrand"))
+                .contentTransition(.numericText())
+                .animation(.linear(duration: 0.2), value: remainingSeconds)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 8)
+        .frame(minWidth: 210)
+        .background(Capsule().fill(Color("BrownBrand").opacity(0.92)))
+        .overlay(Capsule().strokeBorder(.white.opacity(0.35), lineWidth: 1.5))
+    }
+}
+
+// MARK: - GameExitButton
 
 struct GameExitButton: View {
     let action: () -> Void
@@ -76,7 +100,6 @@ struct GameExitButton: View {
 
     var body: some View {
         ZStack {
-            // Base
             Capsule().fill(.white)
 
             GeometryReader { geo in
@@ -88,10 +111,8 @@ struct GameExitButton: View {
             }
             .clipShape(Capsule())
 
-            // Border
             Capsule().strokeBorder(Color("BrownBrand"), lineWidth: 2)
 
-            // Label — flips to white once the fill covers most of it
             HStack(spacing: 8) {
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .bold))
@@ -145,7 +166,8 @@ struct GameExitButton: View {
 struct GameTopBar: View {
     let scoreP1: Int
     let scoreP2: Int
-    let winScore: Int
+    let category: String
+    let remainingSeconds: Int
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -153,13 +175,7 @@ struct GameTopBar: View {
 
             Spacer(minLength: 8)
 
-            Text("First to \(winScore)")
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 9)
-                .background(Capsule().fill(Color("BrownBrand").opacity(0.9)))
-                .overlay(Capsule().strokeBorder(.white.opacity(0.35), lineWidth: 1.5))
+            RoundInfoPill(category: category, remainingSeconds: remainingSeconds)
 
             Spacer(minLength: 8)
 
@@ -170,11 +186,11 @@ struct GameTopBar: View {
     }
 }
 
-#Preview {
+#Preview(traits: .landscapeLeft) {
     ZStack {
         Color.black.ignoresSafeArea()
         VStack {
-            GameTopBar(scoreP1: 8, scoreP2: 13, winScore: 20)
+            GameTopBar(scoreP1: 8, scoreP2: -1, category: "Animals", remainingSeconds: 83)
             Spacer()
             GameExitButton(action: {})
                 .padding(.bottom, 20)
