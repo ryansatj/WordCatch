@@ -1,12 +1,11 @@
 {
   "images" : [
     {
-      "filename" : "Mascot 1.png",
+      "filename" : "Position1.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "Mascot.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
