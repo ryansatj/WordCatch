@@ -10,10 +10,9 @@ import SwiftUI
 
 struct PlayerSelectionScreen: View {
     var onBack: () -> Void = {}
-    var onSelect: () -> Void = {}
+    var onSelect: (GameMode) -> Void = { _ in }
 
-    enum Mode { case solo, duo }
-    @State private var selected: Mode? = .solo
+    @State private var selected: GameMode? = .solo
 
     @State private var headerVisible = false
     @State private var card1Visible = false
@@ -68,7 +67,11 @@ struct PlayerSelectionScreen: View {
                 RoleButton(
                     title: "Continue",
                     size: .lg,
-                    action: { if selected != nil { onSelect() } }
+                    action: {
+                        if let selected {
+                            onSelect(selected)
+                        }
+                    }
                 )
                 .frame(maxWidth: 280)
                 .padding(.bottom, 40)
@@ -92,7 +95,7 @@ struct PlayerSelectionScreen: View {
 
     // MARK: - Mode card
 
-    private func modeCard(_ mode: Mode,
+    private func modeCard(_ mode: GameMode,
                           title: String,
                           description: String,
                           image: String) -> some View {

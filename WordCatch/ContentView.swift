@@ -13,6 +13,7 @@ struct ContentView: View {
     }
 
     @State private var screen: Screen = .splash
+    @State private var selectedMode: GameMode = .solo
 
     var body: some View {
         ZStack {
@@ -23,7 +24,10 @@ struct ContentView: View {
             case .playerSelection:
                 PlayerSelectionScreen(
                     onBack: { advance(to: .splash) },
-                    onSelect: { advance(to: .airplay) }
+                    onSelect: { mode in
+                        selectedMode = mode
+                        advance(to: .airplay)
+                    }
                 )
                 .transition(.slideForward)
             case .airplay:
@@ -39,7 +43,7 @@ struct ContentView: View {
                 )
                 .transition(.slideForward)
             case .game:
-                Gameplay(onExit: { advance(to: .playerSelection) })
+                Gameplay(mode: selectedMode, onExit: { advance(to: .playerSelection) })
                     .transition(.opacity)
             }
         }

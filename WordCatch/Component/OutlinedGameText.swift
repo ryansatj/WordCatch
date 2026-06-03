@@ -115,6 +115,6 @@ final class OutlinedLabel: UILabel {
 #Preview {
     ZStack {
         Color.black
-        OutlinedGameText(text: "READY?", fontSize: 86)
+        OutlinedGameText(text: "Ready?", fontSize: 86)
     }
 }

@@ -164,6 +164,7 @@ struct GameExitButton: View {
 // MARK: - GameTopBar
 
 struct GameTopBar: View {
+    let mode: GameMode
     let scoreP1: Int
     let scoreP2: Int
     let category: String
@@ -171,7 +172,7 @@ struct GameTopBar: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            PlayerScorePill(label: "P1", score: scoreP1, accent: Color("OrangeBrand"))
+            PlayerScorePill(label: mode == .solo ? "Score" : "P1", score: scoreP1, accent: Color("OrangeBrand"))
 
             Spacer(minLength: 8)
 
@@ -179,7 +180,9 @@ struct GameTopBar: View {
 
             Spacer(minLength: 8)
 
-            PlayerScorePill(label: "P2", score: scoreP2, accent: Color("BrownBrand"))
+            if mode == .duo {
+                PlayerScorePill(label: "P2", score: scoreP2, accent: Color("BrownBrand"))
+            }
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
@@ -190,7 +193,7 @@ struct GameTopBar: View {
     ZStack {
         Color.black.ignoresSafeArea()
         VStack {
-            GameTopBar(scoreP1: 8, scoreP2: -1, category: "Animals", remainingSeconds: 83)
+            GameTopBar(mode: .duo, scoreP1: 8, scoreP2: -1, category: "Animals", remainingSeconds: 83)
             Spacer()
             GameExitButton(action: {})
                 .padding(.bottom, 20)
