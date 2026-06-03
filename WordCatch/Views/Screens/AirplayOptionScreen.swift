@@ -28,12 +28,12 @@ struct AirplayOptionScreen: View {
                 Spacer()
             }
 
-            VStack(spacing: 32) {
+            VStack(spacing: 16) {
     
                
                 Text("WordCatch is Best\non Larger Screen!")
                     .padding(12)
-                    .font(.system(size: 52, weight: .heavy))
+                    .font(.system(size: 56, weight: .heavy))
                     .fontDesign(.rounded)
                     .multilineTextAlignment(.center)
                     .foregroundColor(Color(red: 0.35, green: 0.13, blue: 0.0))
