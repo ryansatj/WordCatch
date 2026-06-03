@@ -10,6 +10,7 @@
 //
 
 import SwiftUI
+import Lottie
 
 struct TutorialCarouselScreen: View {
     var onBack: () -> Void = {}
@@ -19,14 +20,15 @@ struct TutorialCarouselScreen: View {
     @State private var autoAdvanceTask: Task<Void, Never>? = nil
 
     private let pages: [SetupPage] = [
-        SetupPage(image: "Position1", subtitle: "Place the device and step back now"),
-        SetupPage(image: "Position2", subtitle: "Stand far enough so your upper body is visible"),
-        SetupPage(image: "Position2", subtitle: "Open your hand wide to catch a falling word")
+        SetupPage(image: "Position1Animation", subtitle: "Place the device and step back now"),
+        SetupPage(image: "Position2Animation", subtitle: "Stand far enough so your upper body is visible"),
+        SetupPage(image: "Position3Animation", subtitle: "Open your hand wide to catch a falling word")
     ]
 
     private let perPageSeconds: Double = 2.0
 
     private var isLastPage: Bool { index == pages.count - 1 }
+    
 
     var body: some View {
         ZStack {
@@ -35,14 +37,19 @@ struct TutorialCarouselScreen: View {
                 .scaledToFill()
                 .ignoresSafeArea()
 
-            Image(pages[index].image)
-                .resizable()
-                .offset(y: 40)
-                .scaledToFit()
-                .frame(maxHeight: 260)
-                .padding(.horizontal, 60)
-                .id("img-\(index)")
-                .transition(.opacity)
+            VStack{
+                LottieView(animation: .named(pages[index].image))
+                    .playing()
+                    .resizable()
+                    .looping()
+                    .animationSpeed(0.8)
+                    .frame(width: 500)
+                    .padding(.top, 100)
+                    .offset(x: -50, y:0)
+                
+                PagingDots(count: 3, index: index)
+            }
+
 
             VStack(spacing: 8) {
                 HStack {
