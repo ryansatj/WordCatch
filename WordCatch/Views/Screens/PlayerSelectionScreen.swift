@@ -111,10 +111,10 @@ struct PlayerSelectionScreen: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(title)
-                        .font(.system(size: 30, weight: .bold, design: .rounded))
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
                         .foregroundColor(isSelected ? .white : Color("BrownBrand"))
                     Text(description)
-                        .font(.system(size: 17, weight: .medium, design: .rounded))
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
                         .foregroundColor(isSelected
                                          ? .white.opacity(0.95)
                                          : Color("BrownBrand").opacity(0.7))
