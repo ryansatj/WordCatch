@@ -53,9 +53,9 @@ final class Game {
     private(set) var isFinished = false
     private(set) var mode: GameMode = .solo
     private(set) var currentCategory = WordCategory.animals
-    private(set) var remainingSeconds = 120
+    private(set) var remainingSeconds = 10
 
-    let roundDuration: CFTimeInterval = 120
+    let roundDuration: CFTimeInterval = 10
 
     // MARK: - Tuning knobs
 

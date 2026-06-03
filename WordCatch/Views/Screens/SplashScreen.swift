@@ -81,6 +81,7 @@ struct SplashScreen: View {
                 loadingDone = true //hardcoded loadiing
             }
         }
+        .onAppear { OrientationManager.shared.lockLandscape() }
     }
 
     private func startDotAnimation() {
@@ -111,6 +112,6 @@ private struct LoadingDots: View {
     }
 }
 
-#Preview {
+#Preview(traits: .landscapeRight) {
     SplashScreen()
 }

@@ -19,7 +19,7 @@ struct NoFadeButtonStyle: ButtonStyle {
     }
 }
 
-struct RoleButton: View {
+struct RoleButton<Content: View>: View {
     enum Variant {
         case primary, secondary, ghost
     }
@@ -57,10 +57,29 @@ struct RoleButton: View {
         }
     }
 
-    let title: String
     var size: Size = .lg
     var variant: Variant = .primary
+    var width: CGFloat? = nil
+    var height: CGFloat? = nil
     let action: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    init(size: Size = .lg,
+         variant: Variant = .primary,
+         width: CGFloat? = nil,
+         height: CGFloat? = nil,
+         action: @escaping () -> Void,
+         @ViewBuilder content: @escaping () -> Content) {
+        self.size = size
+        self.variant = variant
+        self.width = width
+        self.height = height
+        self.action = action
+        self.content = content
+    }
+
+    /// Effective height: explicit override, otherwise the `Size` preset.
+    private var resolvedHeight: CGFloat { height ?? size.height }
 
     private let shadowDepth: CGFloat = 4
     @State private var pressed = false
@@ -116,15 +135,15 @@ struct RoleButton: View {
                                 .fill(Color.black.opacity(0.3))
                         }
                     }
-                    .frame(height: size.height)
+                    .frame(height: resolvedHeight)
                     .offset(y: shadowDepth)
                 }
 
-                Text(title)
+                content()
                     .font(size.font)
                     .foregroundColor(foreground)
                     .frame(maxWidth: .infinity)
-                    .frame(height: size.height)
+                    .frame(height: resolvedHeight)
                     .background(
                         RoundedRectangle(cornerRadius: size.radius)
                             .fill(background)
@@ -144,8 +163,9 @@ struct RoleButton: View {
                     .offset(y: hasChunky && pressed ? shadowDepth : 0)
                     .scaleEffect(!hasChunky && pressed ? 0.95 : 1.0)
             }
-            .frame(height: hasChunky ? size.height + shadowDepth : size.height)
+            .frame(height: hasChunky ? resolvedHeight + shadowDepth : resolvedHeight)
         }
+        .frame(width: width)
         .buttonStyle(NoFadeButtonStyle())
     }
 
@@ -159,11 +179,48 @@ struct RoleButton: View {
     }
 }
 
+// MARK: - Convenience: plain title
+
+extension RoleButton where Content == Text {
+    /// Text-only button (keeps the original `title:` API).
+    init(title: String,
+         size: Size = .lg,
+         variant: Variant = .primary,
+         width: CGFloat? = nil,
+         height: CGFloat? = nil,
+         action: @escaping () -> Void) {
+        self.init(size: size, variant: variant, width: width, height: height, action: action) {
+            Text(title)
+        }
+    }
+}
+
 #Preview {
     VStack(spacing: 18) {
+        // Title-only (unchanged API)
         RoleButton(title: "I'm Ready!", size: .xl, action: {})
 
         RoleButton(title: "Primary Large", size: .lg, action: {})
+
+        // Custom content: image + text
+        RoleButton(size: .lg, variant: .secondary, action: {}) {
+            HStack(spacing: 10) {
+                Image(systemName: "person.fill")
+                Text("Pick Role")
+            }
+        }
+
+        // Custom content: icon only
+        RoleButton(size: .md, variant: .primary, action: {}) {
+            Image(systemName: "airplayvideo")
+        }
+
+        RoleButton(variant: .secondary, width: 200, height: 120, action: {}) {
+            VStack(spacing: 8) {
+                Image(systemName: "star.fill")
+                Text("Custom Size")
+            }
+        }
 
         HStack(spacing: 12) {
             RoleButton(title: "Skip",     size: .md, variant: .secondary, action: {})

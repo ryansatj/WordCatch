@@ -94,7 +94,6 @@ struct Gameplay: View {
             .onDisappear {
                 manager.stop()
                 game.stop()
-                OrientationManager.shared.lockPortrait()
             }
         }
     }
