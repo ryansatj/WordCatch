@@ -124,6 +124,8 @@ struct TimeUpOverlay: View {
 // MARK: - Shared Background
 
 struct CelebrationBackground: View {
+    @State private var spin = false
+
     var body: some View {
         ZStack {
             LinearGradient(
@@ -135,25 +137,11 @@ struct CelebrationBackground: View {
 
             SunburstShape()
                 .fill(Color("OrangeBrand").opacity(0.08))
+                .rotationEffect(.degrees(spin ? 360 : 0))
+                .animation(.linear(duration: 85).repeatForever(autoreverses: false), value: spin)
                 .ignoresSafeArea()
-
-            VStack {
-                HStack {
-                    HalftoneDots()
-                        .fill(Color("OrangeBrand").opacity(0.42))
-                        .frame(width: 160, height: 120)
-                    Spacer()
-                }
-                Spacer()
-                HStack {
-                    Spacer()
-                    HalftoneDots()
-                        .fill(Color("OrangeBrand").opacity(0.34))
-                        .frame(width: 170, height: 120)
-                }
-            }
-            .ignoresSafeArea()
         }
+        .onAppear { spin = true }
     }
 }
 
@@ -201,5 +189,31 @@ struct HalftoneDots: Shape {
 
         return path
     }
+}
+
+// MARK: - Previews
+
+#Preview("CameraLoading", traits: .landscapeRight) {
+    CameraLoadingOverlay()
+}
+
+#Preview("CategoryPrompt", traits: .landscapeRight) {
+    CategoryPromptOverlay(category: "Animals")
+}
+
+#Preview("Countdown – 3", traits: .landscapeRight) {
+    CountdownOverlay(value: 3)
+}
+
+#Preview("Countdown – GO", traits: .landscapeRight) {
+    CountdownOverlay(value: 0)
+}
+
+#Preview("TimeUp", traits: .landscapeRight) {
+    TimeUpOverlay(onContinue: {})
+}
+
+#Preview("CelebrationBackground", traits: .landscapeRight) {
+    CelebrationBackground()
 }
 
