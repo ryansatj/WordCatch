@@ -1,11 +1,10 @@
-//
-//  TryHandsView.swift
-//  WordCatch
-//
-//  Second pre-game step (after Position Setup): players practise the two
-//  gestures — open hand to catch, closed hand to skip — before the round.
-//  Kept in its own file so the tutorial flow stays clean.
-//
+
+
+
+//MARK: Gung
+
+
+
 
 import SwiftUI
 
@@ -13,6 +12,17 @@ struct TryHandsView: View {
     let mode: GameMode
     var hands: () -> [HandSnapshot]
     var onReady: () -> Void
+
+    // MARK: - Tuning
+
+    private let holdToPass: TimeInterval = 0.6   // how long a gesture must hold
+
+    // MARK: - State
+
+    @State private var step: Step = .close
+    @State private var heldSince: Date?
+    @State private var timer: Timer?
+    @State private var done = false
 
     private enum Step: Equatable {
         case close, open, done
@@ -33,21 +43,15 @@ struct TryHandsView: View {
         }
         var image: String {
             switch self {
-            case .close: return "Image"        // closed-hand asset
-            case .open:  return "PandaHand"     // open-hand asset
+            case .close: return "Image"          // closed-hand asset
+            case .open:  return "PandaHand"       // open-hand asset
             case .done:  return "SplashMascot"
             }
         }
         var tint: Color { self == .done ? .green : Color("OrangeBrand") }
     }
 
-    @State private var step: Step = .close
-    @State private var heldSince: Date? = nil
-    @State private var timer: Timer? = nil
-    @State private var done = false
-
-    /// How long a gesture must hold before it counts.
-    private let holdToPass: TimeInterval = 0.6
+    // MARK: - Body
 
     var body: some View {
         ZStack {
@@ -56,7 +60,7 @@ struct TryHandsView: View {
             VStack(spacing: 20) {
                 header
                 promptCard
-                debugNext
+                debugSkipButton
             }
             .padding(.horizontal, 40)
             .padding(.vertical, 24)
@@ -78,8 +82,6 @@ struct TryHandsView: View {
 
     private var promptCard: some View {
         VStack(spacing: 8) {
-            
-            
             Image(step.image)
                 .resizable()
                 .scaledToFit()
@@ -101,11 +103,11 @@ struct TryHandsView: View {
         .animation(.spring(response: 0.35, dampingFraction: 0.7), value: step)
     }
 
-    private var debugNext: some View {
+    private var debugSkipButton: some View {
         HStack {
             Spacer()
-            //MARK: Debug: skip the practice (hand detection doesn't run in previews/sim).
-            RoleButton(title: "Next", size: .sm, variant: .secondary, width: 90) { finish() }
+            // debug purposes (delete later): skip the practice
+            RoleButton(title: "Next", size: .sm, variant: .secondary, width: 90, action: finish)
         }
     }
 
@@ -113,9 +115,7 @@ struct TryHandsView: View {
 
     private func startPolling() {
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-            evaluate()
-        }
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in evaluate() }
     }
 
     private func evaluate() {
@@ -124,19 +124,22 @@ struct TryHandsView: View {
 
         switch step {
         case .close:
-            // A closed hand — per side in duo, anywhere in solo.
-            if satisfied(snaps, { !$0.isOpen }) {
-                pass { withAnimation { step = .open } }
-            } else { heldSince = nil }
-
+            advanceWhen(satisfied(snaps, isClosed)) { withAnimation { step = .open } }
         case .open:
-            // An open hand — per side in duo, anywhere in solo.
-            if satisfied(snaps, { $0.isOpen }) {
-                pass { finish() }
-            } else { heldSince = nil }
-
+            advanceWhen(satisfied(snaps, isOpen)) { finish() }
         case .done:
             break
+        }
+    }
+
+    /// Holds the current gesture for `holdToPass`, then runs `action`.
+    private func advanceWhen(_ satisfied: Bool, _ action: () -> Void) {
+        guard satisfied else { heldSince = nil; return }
+        if heldSince == nil {
+            heldSince = Date()
+        } else if Date().timeIntervalSince(heldSince!) >= holdToPass {
+            heldSince = nil
+            action()
         }
     }
 
@@ -148,15 +151,8 @@ struct TryHandsView: View {
         return left.contains(where: check) && right.contains(where: check)
     }
 
-    // Calls `action` once the current gesture has been held long enough.
-    private func pass(_ action: () -> Void) {
-        if heldSince == nil {
-            heldSince = Date()
-        } else if Date().timeIntervalSince(heldSince!) >= holdToPass {
-            heldSince = nil
-            action()
-        }
-    }
+    private func isOpen(_ hand: HandSnapshot) -> Bool { hand.isOpen }
+    private func isClosed(_ hand: HandSnapshot) -> Bool { !hand.isOpen }
 
     private func finish() {
         guard !done else { return }

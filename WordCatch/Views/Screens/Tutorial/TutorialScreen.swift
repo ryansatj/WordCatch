@@ -56,7 +56,7 @@ struct TutorialScreen: View {
     
     var body: some View {
         ZStack {
-            // Gameplay layer — only while playing.
+            // Gameplay layer
             if isPlaying {
                 ForEach(words) { w in
                     FallingWordView(text: w.text, isLeftSide: mode == .duo && w.x < size.width / 2)
@@ -103,7 +103,7 @@ struct TutorialScreen: View {
         .onDisappear(perform: stopLoop)
     }
     
-    // MARK: - Intro sequence
+    // MARK: Introo
     
     private func runIntroThenStart() {
         Task {
@@ -155,7 +155,7 @@ struct TutorialScreen: View {
         .animation(.tutorialPhase, value: done)
     }
     
-    // MARK: - Catch-word banner
+    // MARK: Bannerr
 
     private var isPlaying: Bool {
         if case .playing = phase { return true }

@@ -1,23 +1,37 @@
-//
-//  PositionSetupView.swift
-//  WordCatch
-//
-//  Pre-game calibration shown before the tutorial: it watches the live hand
-//  detection and coaches the player(s) into frame ("Raise Your Hands" /
-//  "Move Farther") before letting the round begin, plus an open-vs-closed
-//  hand legend. Solo shows one card; duo checks each side independently.
-//
 
-// MARK: fituururewiufhuewfweb
+
+
+
+
+
+
+//MARK: Gung
 
 import SwiftUI
 import Vision
-import QuartzCore
 
 struct PositionSetupView: View {
     let mode: GameMode
     var hands: () -> [HandSnapshot]
     var onReady: () -> Void
+
+    // MARK: Tuning
+
+    private let requiredHands = 2
+    private let holdToReady: TimeInterval = 1.5    // for ready
+    private let tooCloseSpan: CGFloat = 0.5        // hand span that counts as too close
+
+    // MARK: State
+
+    @State private var leftState: SetupState = .raiseHands   // solo uses this one
+    @State private var rightState: SetupState = .raiseHands
+    @State private var readySince: Date?
+    @State private var timer: Timer?
+    @State private var done = false
+
+    private var allReady: Bool {
+        mode == .duo ? leftState == .ready && rightState == .ready : leftState == .ready
+    }
 
     private enum SetupState: Equatable {
         case raiseHands     // not enough hands visible
@@ -31,51 +45,30 @@ struct PositionSetupView: View {
             case .ready:       return "Perfect!"
             }
         }
-        var icon: String {
+        var image: String {
             switch self {
-            case .raiseHands:  return "PandaHand"
-            case .moveFarther: return "Xmark"
+            case .raiseHands:  return "TwoHand"
+            case .moveFarther: return "Image"        // TODO: dedicated "too close" art
             case .ready:       return "SplashMascot"
             }
         }
-        
         var tint: Color { self == .ready ? .green : Color("OrangeBrand") }
     }
 
-    @State private var leftState: SetupState = .raiseHands   // also the solo state
-    @State private var rightState: SetupState = .raiseHands
-    @State private var readySince: Date? = nil
-    @State private var timer: Timer? = nil
-    @State private var done = false
-
-    private let holdToReady: TimeInterval = 1.5
-    private let tooCloseSpan: CGFloat = 0.5
-
-    private var allReady: Bool {
-        mode == .duo ? (leftState == .ready && rightState == .ready) : leftState == .ready
-    }
+    // MARK: Body
 
     var body: some View {
         ZStack {
             Color.black.opacity(0.45).ignoresSafeArea()
 
-            if mode == .duo {
-                PlayerDivider()
-            }
+            if mode == .duo { PlayerDivider() }
 
-            cardsLayer
+            cards
 
             VStack {
                 header
                 Spacer()
-                //MARK: FOR DEBUGGING Debug: skip calibration (hand detection doesn't run in previews/sim).
-                
-                HStack {
-                    Spacer()
-                    RoleButton(title: "Next", size: .sm, variant: .secondary, width: 90) {
-                        advance() //THISS
-                    }
-                }
+                debugSkipButton
             }
             .padding(.horizontal, 40)
             .padding(.vertical, 24)
@@ -83,15 +76,8 @@ struct PositionSetupView: View {
         .onAppear(perform: startPolling)
         .onDisappear { timer?.invalidate() }
     }
-    
-    private func advance() {
-        guard !done else { return }
-        done = true
-        timer?.invalidate()
-        onReady() //MARK: FOR DEBUGGING
-    }
 
-    // MARK: - Sub-views
+    // MARK: Sub-views
 
     private var header: some View {
         RoleButton(size: .lg, variant: .primary, width: 240, height: 54, action: {}) {
@@ -103,33 +89,29 @@ struct PositionSetupView: View {
     }
 
     @ViewBuilder
-    private var cardsLayer: some View {
+    private var cards: some View {
         if mode == .duo {
             HStack(spacing: 0) {
-                instructionCard(leftState, label: "Player 1")
-                    .frame(maxWidth: .infinity)
-                instructionCard(rightState, label: "Player 2")
-                    .frame(maxWidth: .infinity)
+                card(leftState, label: "Player 1").frame(maxWidth: .infinity)
+                card(rightState, label: "Player 2").frame(maxWidth: .infinity)
             }
             .offset(y: 15)
         } else {
-            instructionCard(leftState, label: nil)
+            card(leftState, label: nil)
         }
     }
 
-    private func instructionCard(_ state: SetupState, label: String?) -> some View {
+    private func card(_ state: SetupState, label: String?) -> some View {
         VStack(spacing: 10) {
             if let label {
                 Text(label)
                     .font(.system(size: 16, weight: .bold, design: .rounded))
                     .foregroundStyle(Color("BrownBrand").opacity(0.7))
             }
-            Image(state.icon)
+            Image(state.image)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 100, height: 100)
-                .font(.system(size: 46))
-                .foregroundStyle(state.tint)
+                .frame(width: 180, height: 100)
             Text(state.title)
                 .font(.system(size: 24, weight: .black, design: .rounded))
                 .foregroundStyle(.brownBrand)
@@ -147,13 +129,19 @@ struct PositionSetupView: View {
         .animation(.spring(response: 0.35, dampingFraction: 0.7), value: state)
     }
 
-    // MARK: - Detection
+    private var debugSkipButton: some View {
+        HStack {
+            Spacer()
+            // debug  (delete later)
+            RoleButton(title: "Next", size: .sm, variant: .secondary, width: 90, action: finish)
+        }
+    }
+
+    // MARK:  Detection
 
     private func startPolling() {
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-            evaluate()
-        }
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in evaluate() }
     }
 
     private func evaluate() {
@@ -161,40 +149,53 @@ struct PositionSetupView: View {
         let snaps = hands()
 
         if mode == .duo {
-            let l = state(for: snaps.filter { $0.palmCenter.x < 0.5 })
-            let r = state(for: snaps.filter { $0.palmCenter.x >= 0.5 })
-            if l != leftState { withAnimation { leftState = l } }
-            if r != rightState { withAnimation { rightState = r } }
+            setLeft(state(for: snaps.filter { $0.palmCenter.x < 0.5 }))
+            setRight(state(for: snaps.filter { $0.palmCenter.x >= 0.5 }))
         } else {
-            let s = state(for: snaps)
-            if s != leftState { withAnimation { leftState = s } }
+            setLeft(state(for: snaps))
         }
 
-        if allReady {
-            if readySince == nil {
-                readySince = Date()
-            } else if Date().timeIntervalSince(readySince!) >= holdToReady {
-                done = true
-                timer?.invalidate()
-                onReady()
-            }
-        } else {
-            readySince = nil
+        updateReadyHold()
+    }
+
+    private func setLeft(_ s: SetupState) {
+        if s != leftState { withAnimation { leftState = s } }
+    }
+
+    private func setRight(_ s: SetupState) {
+        if s != rightState { withAnimation { rightState = s } }
+    }
+
+    // Continues once every zone has stayed `.ready` for `holdToReady`.
+    private func updateReadyHold() {
+        guard allReady else { readySince = nil; return }
+        if readySince == nil {
+            readySince = Date()
+        } else if Date().timeIntervalSince(readySince!) >= holdToReady {
+            finish()
         }
     }
 
-    /// State for one zone's hands (all hands in solo, one side in duo).
-    /// Both hands must be up — 2 per side in duo, 2 total in solo.
     private func state(for snaps: [HandSnapshot]) -> SetupState {
-        if snaps.contains(where: { handSpan($0) > tooCloseSpan }) { return .moveFarther }
-        return snaps.count >= 2 ? .ready : .raiseHands
+        if snaps.contains(where: isTooClose) { return .moveFarther }
+        return snaps.count >= requiredHands ? .ready : .raiseHands
     }
 
-    /// Normalised wrist→middle-fingertip distance — a proxy for camera distance.
+    private func isTooClose(_ hand: HandSnapshot) -> Bool {
+        handSpan(hand) > tooCloseSpan
+    }
+
+
     private func handSpan(_ hand: HandSnapshot) -> CGFloat {
-        guard let wrist = hand.points[.wrist],
-              let tip = hand.points[.middleTip] else { return 0 }
+        guard let wrist = hand.points[.wrist], let tip = hand.points[.middleTip] else { return 0 }
         return hypot(tip.x - wrist.x, tip.y - wrist.y)
+    }
+
+    private func finish() {
+        guard !done else { return }
+        done = true
+        timer?.invalidate()
+        onReady()
     }
 }
 
