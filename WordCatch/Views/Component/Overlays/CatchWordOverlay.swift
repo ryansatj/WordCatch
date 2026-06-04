@@ -8,18 +8,23 @@
 import SwiftUI
 
 struct CatchWordOverlay: View {
+    var category: String = "Animal"
+    /// Compact sizing for use as a persistent in-game banner; the default
+    /// large sizing is the full-screen intro card.
+    var compact: Bool = false
+
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: compact ? 4 : 8) {
             Text("Catch the word in")
-                .font(.system(size: 44, weight: .semibold, design: .rounded))
+                .font(.system(size: compact ? 20 : 44, weight: .semibold, design: .rounded))
                 .foregroundStyle(.brownBrand)
-            Text("Animal")
-                .font(.system(size: 56, weight: .heavy, design: .rounded))
+            Text(category)
+                .font(.system(size: compact ? 24 : 56, weight: .heavy, design: .rounded))
                 .foregroundStyle(Color("OrangeBrand"))
-                .padding(.horizontal, 100)
+                .padding(.horizontal, compact ? 24 : 100)
         }
-        .padding(.horizontal, 44)
-        .padding(.vertical, 28)
+        .padding(.horizontal, compact ? 24 : 44)
+        .padding(.vertical, compact ? 12 : 28)
         .background(Color(.creamBrand), in: RoundedRectangle(cornerRadius: 24))
         .shadow(radius: 1)
         .overlay(
@@ -29,6 +34,10 @@ struct CatchWordOverlay: View {
     }
 }
 
-#Preview(traits: .landscapeRight) {
+#Preview("Full", traits: .landscapeRight) {
     CatchWordOverlay()
+}
+
+#Preview("Compact", traits: .landscapeRight) {
+    CatchWordOverlay(compact: true)
 }
