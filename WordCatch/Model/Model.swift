@@ -30,3 +30,9 @@ struct HandSnapshot: Identifiable {
     var isOpen: Bool
     var palmCenter: CGPoint
 }
+
+struct SetupPage: Identifiable {
+    let id = UUID()
+    let image: String
+    let subtitle: String
+}

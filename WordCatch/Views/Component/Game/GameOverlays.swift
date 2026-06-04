@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-// NOTE: ScoreResultScreen and LearningScreen have been moved to separate files.
 
 // MARK: - CameraLoadingOverlay
 
@@ -34,35 +33,6 @@ struct CameraLoadingOverlay: View {
     }
 }
 
-// MARK: - CategoryPromptOverlay
-
-struct CategoryPromptOverlay: View {
-    let category: String
-
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.58).ignoresSafeArea()
-
-            VStack(spacing: 10) {
-                Text("Find")
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.78))
-
-                Text(category)
-                    .font(.system(size: 76, weight: .black, design: .rounded))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.55)
-                    .shadow(color: .black.opacity(0.55), radius: 8, y: 4)
-
-                Text("Correct word +1  |  Wrong word -1")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundColor(Color("OrangeBrand"))
-            }
-            .padding(.horizontal, 32)
-        }
-    }
-}
 
 // MARK: - CountdownOverlay
 
@@ -74,15 +44,8 @@ struct CountdownOverlay: View {
             if let v = value {
                 Color.black.opacity(0.4).ignoresSafeArea()
 
-                Text(v == 0 ? "GO!" : "\(v)")
-                    .font(.system(size: 160, weight: .black, design: .rounded))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: v == 0 ? [.yellow, .orange] : [.white, .white.opacity(0.9)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+                OutlinedGameText(text: v == 0 ? "GO!" : "\(v)", fontSize: 160)
+                    .fixedSize()
                     .shadow(color: .black.opacity(0.6), radius: 10, y: 6)
                     .id(v)
                     .transition(.scale(scale: 1.7).combined(with: .opacity))
@@ -171,25 +134,7 @@ struct SunburstShape: Shape {
     }
 }
 
-struct HalftoneDots: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let spacing: CGFloat = 12
-        let dotSize: CGFloat = 4
-        var y = rect.minY
 
-        while y <= rect.maxY {
-            var x = rect.minX
-            while x <= rect.maxX {
-                path.addEllipse(in: CGRect(x: x, y: y, width: dotSize, height: dotSize))
-                x += spacing
-            }
-            y += spacing
-        }
-
-        return path
-    }
-}
 
 // MARK: - Previews
 
@@ -197,9 +142,6 @@ struct HalftoneDots: Shape {
     CameraLoadingOverlay()
 }
 
-#Preview("CategoryPrompt", traits: .landscapeRight) {
-    CategoryPromptOverlay(category: "Animals")
-}
 
 #Preview("Countdown – 3", traits: .landscapeRight) {
     CountdownOverlay(value: 3)

@@ -15,6 +15,7 @@ struct WordCatchApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .preferredColorScheme(.light)   // lock to light; the UI isn't designed for dark mode
         }
     }
 }
