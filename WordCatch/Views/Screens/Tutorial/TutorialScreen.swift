@@ -21,9 +21,10 @@ private struct TutorialWord: Identifiable {
 }
 
 private enum TutorialPhase: Equatable {
+    case positionSetup
+    case tryHands
     case letsTry
     case catchWord
-    case countdown(Int)
     case playing
     case finished
 }
@@ -37,14 +38,16 @@ struct TutorialScreen: View {
     var size: CGSize
     var onFinished: () -> Void
     
-    @State private var phase: TutorialPhase = .letsTry
+    @State private var phase: TutorialPhase = .positionSetup
     @State private var p1Done = false
     @State private var p2Done = false
     @State private var words: [TutorialWord] = []
     @State private var timer: Timer? = nil
     @State private var last = CACurrentMediaTime()
     @State private var spawnIn: CFTimeInterval = 0.5
-    
+    /// Drives the catch-word card's big-centre -> small-top zoom.
+    @State private var bannerShrunk = false
+
     private let maxOnScreen = 4
     private let fallDuration: ClosedRange<Double> = 4.0...5.5
     private let catchRadiusFraction: CGFloat = 0.24
@@ -53,21 +56,16 @@ struct TutorialScreen: View {
     
     var body: some View {
         ZStack {
-            // Words + game UI — only during playing phase
-            if case .playing = phase {
+            // Gameplay layer
+            if isPlaying {
                 ForEach(words) { w in
                     FallingWordView(text: w.text, isLeftSide: mode == .duo && w.x < size.width / 2)
                         .position(x: w.x, y: w.y)
                 }
-                
+
                 if mode == .duo {
-                    // Center divider
-                    Rectangle()
-                        .fill(.white.opacity(0.25))
-                        .frame(width: 1)
-                        .frame(maxHeight: .infinity)
-                        .allowsHitTesting(false)
-                    
+                    PlayerDivider()
+
                     HStack(spacing: 0) {
                         sideOverlay(done: p1Done)
                         sideOverlay(done: p2Done)
@@ -75,56 +73,55 @@ struct TutorialScreen: View {
                 } else {
                     sideOverlay(done: p1Done)
                 }
-                
-                if !p1Done || (mode == .duo && !p2Done) {
-                    instructionBanner
-                }
             }
-            
-            // Phase overlays
+
+            if showsCatchBanner {
+                catchWordBanner
+                    .transition(.opacity)
+            }
+
+
             switch phase {
+            case .positionSetup:
+                PositionSetupView(mode: mode, hands: hands) {
+                    withAnimation(.tutorialPhase) { phase = .tryHands }
+                }
+                .transition(.opacity)
+            case .tryHands:
+                TryHandsView(mode: mode, hands: hands, onReady: runIntroThenStart)
+                    .transition(.opacity)
             case .letsTry:
                 LetsTryOverlay()
                     .transition(.scale(scale: 0.85).combined(with: .opacity))
-            case .catchWord:
-                CatchWordOverlay()
-                    .transition(.scale(scale: 0.85).combined(with: .opacity))
-            case .countdown(let n):
-                CountdownOverlay(value: n)
-                    .transition(.opacity)
-            case .playing:
-                EmptyView()
-                
             case .finished:
                 ReadyOverlay()
                     .transition(.scale(scale: 0.85).combined(with: .opacity))
+            default:
+                EmptyView()
             }
         }
-        .onAppear(perform: runIntroThenStart)
         .onDisappear(perform: stopLoop)
     }
     
-    // MARK: - Intro sequence
+    // MARK: Introo
     
     private func runIntroThenStart() {
         Task {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { phase = .letsTry }
+            withAnimation(.tutorialPhase) { phase = .letsTry }
             try? await Task.sleep(for: .milliseconds(2000))
             
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { phase = .catchWord }
-            try? await Task.sleep(for: .milliseconds(1800))
             
-            for n in [3, 2, 1] {
-                withAnimation(.easeInOut(duration: 0.25)) { phase = .countdown(n) }
-                try? await Task.sleep(for: .milliseconds(900))
-            }
-            
-            withAnimation(.easeOut(duration: 0.3)) { phase = .playing }
+            withAnimation(.bannerReveal) { phase = .catchWord }
+            try? await Task.sleep(for: .milliseconds(2000))
+
+            withAnimation(.bannerShrink) { bannerShrunk = true }
+            try? await Task.sleep(for: .milliseconds(2000))
+
+            withAnimation(.hudReveal) { phase = .playing }
             startLoop()
         }
     }
     
-    // MARK: - Sub-views
     
     @ViewBuilder
     private func sideOverlay(done: Bool) -> some View {
@@ -133,56 +130,60 @@ struct TutorialScreen: View {
                 Color.black.opacity(0.35)
                     .transition(.opacity)
                 
-                VStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 100))
-                        .foregroundStyle(.orangeBrand).opacity(0.8)
+                VStack(spacing: 10) {
+                    Image("checkmark.circle.fill")
+                        .font(.system(size: 64))
+                        .foregroundStyle(Color("OrangeBrand"))
                     Text("Nice catch!")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(.white)
-                    Text("Ready, Waiting for partner...")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .font(.system(size: 22, weight: .black, design: .rounded))
+                        .foregroundStyle(.brownBrand)
+                    Text("Ready  waiting for partner…")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color("BrownBrand").opacity(0.7))
                 }
+                .padding(.horizontal, 36)
+                .padding(.vertical, 24)
+                .background(Color(.creamBrand), in: RoundedRectangle(cornerRadius: 20))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .strokeBorder(Color("OrangeBrand").opacity(0.7), lineWidth: 2.5)
+                )
                 .transition(.scale.combined(with: .opacity))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: done)
+        .animation(.tutorialPhase, value: done)
     }
     
-    private var instructionBanner: some View {
-        VStack{
-            VStack(spacing: 8) {
-                Text("Catch the word in")
-                    .font(.system(size: 20, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.brownBrand)
-                Text("Animal")
-                    .font(.system(size: 24, weight: .heavy, design: .rounded))
-                    .foregroundStyle(Color("OrangeBrand"))
-                    .padding(.horizontal, 60)
-                
-            }
-            .padding(.horizontal)
-            .padding(.vertical)
-            .background(Color(.creamBrand), in: RoundedRectangle(cornerRadius: 24))
-            .shadow(radius: 1)
-            .overlay(
-                RoundedRectangle(cornerRadius: 24)
-                    .strokeBorder(.white.opacity(0.25), lineWidth: 1.5)
-            )
-            Spacer()
+    // MARK: Bannerr
+
+    private var isPlaying: Bool {
+        if case .playing = phase { return true }
+        return false
+    }
+
+    /// Visible from the catch-word reveal through play, until everyone catches.
+    private var showsCatchBanner: Bool {
+        switch phase {
+        case .catchWord: return true
+        case .playing:   return !(p1Done && (mode == .solo || p2Done))
+        default:         return false
         }
-        .padding(.top)
     }
-    
-    private var bannerText: String {
-        if mode == .solo { return "Catch an animal word to start!" }
-        if p1Done && !p2Done { return "P2 — catch an animal word!" }
-        if p2Done && !p1Done { return "P1 — catch an animal word!" }
-        return "Each player: catch one animal word!"
+
+    /// One card the whole time; `bannerShrunk` zooms it from big-centre to
+    /// small-top so the reveal is a single continuous shrink.
+    private var catchWordBanner: some View {
+        CatchWordOverlay(compact: true)
+            .scaleEffect(bannerShrunk ? 1.0 : 2.2)
+            // Centre via layout, not .position(x: size.width/2): `size` is the
+            // safe-area size while this view is drawn full-screen, so in
+            // landscape the asymmetric insets pushed it off-centre. A full-width
+            // frame centres it true; offset only drives the vertical move.
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .offset(y: bannerShrunk ? -(size.height / 2) + 70 : 0)
     }
-    
+
     // MARK: - Game loop
     
     private func startLoop() {

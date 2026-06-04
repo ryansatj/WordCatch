@@ -15,8 +15,7 @@ struct PlayerScorePill: View {
     let accent: Color
 
     var body: some View {
-        // Same reusable RoleButton chrome as RoundInfoPill; the accent colours
-        // the label chip + score so it stays a non-interactive status display.
+     
         RoleButton(size: .lg, variant: .secondary, width: 132, height: 64, action: {}) {
             HStack(spacing: 10) {
                 Text(label)
@@ -50,41 +49,53 @@ struct PlayerDivider: View {
     }
 }
 
-// MARK: - RoundInfoPill
+// MARK: - TimerPill
 
-struct RoundInfoPill: View {
-    let category: String
-    let remainingSeconds: Int
+struct TimerPill: View {
+    let seconds: Int
 
     private var timeText: String {
-        let minutes = remainingSeconds / 60
-        let seconds = remainingSeconds % 60
-        return String(format: "%d:%02d", minutes, seconds)
+        String(format: "%02d:%02d", seconds / 60, seconds % 60)
     }
 
     var body: some View {
-        // Reuses the resizable RoleButton for a consistent look; it's a status
-        // display, not a control, so hit-testing is disabled.
-        RoleButton(size: .lg, variant: .secondary, width: 240, height: 64, action: {}) {
-            VStack(spacing: 2) {
-                Text("Find \(category)")
-                    .font(.system(size: 19, weight: .heavy, design: .rounded))
-                    .foregroundColor(Color("BrownBrand"))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
+        RoleButton(size: .lg, variant: .primary, width: 150, height: 54, action: {}) {
+            HStack(spacing: 8) {
+                Image(systemName: "clock.fill")
+                    .font(.system(size: 20, weight: .bold))
                 Text(timeText)
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundColor(Color("OrangeBrand"))
+                    .font(.system(size: 24, weight: .heavy, design: .rounded))
                     .contentTransition(.numericText())
-                    .animation(.linear(duration: 0.2), value: remainingSeconds)
             }
-            .padding(.horizontal, 12)
-            
+            .foregroundColor(.white)
         }
         .allowsHitTesting(false)
-        
+    }
+}
 
+// MARK: - RoundHeader
+
+struct RoundHeader: View {
+    let seconds: Int
+    let category: String
+    let raised: Bool
+
+    var body: some View {
+        // Measures its own container so positioning is identical in the
+        // preview and in gameplay (no externally-passed size to get out of sync).
+        GeometryReader { geo in
+            VStack(spacing: 10) {
+                CatchWordOverlay(category: category, compact: true)
+                    .zIndex(1)        //z index satu artinya depan
+                    .offset()
+                TimerPill(seconds: seconds)
+                    .offset(y: -20)
+                    .zIndex(-1)           // ini belakang
+            }
+            .scaleEffect(raised ? 1.0 : 1.6)
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .center)
+            .offset(y: raised ? -(geo.size.height / 2) + 80 : 0)
+        }
     }
 }
 
@@ -164,28 +175,48 @@ struct GameExitButton: View {
     }
 }
 
-// MARK: - GameTopBar
 
-struct GameTopBar: View {
+
+// MARK: - PlayingHUD
+
+/// In-game side HUD: score pills along the top, hold-to-exit at the bottom.
+struct PlayingHUD: View {
     let mode: GameMode
     let scoreP1: Int
     let scoreP2: Int
-    let category: String
-    let remainingSeconds: Int
+    let onExit: () -> Void
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            PlayerScorePill(label: mode == .solo ? "Score" : "P1", score: scoreP1, accent: Color("OrangeBrand"))
-
-            Spacer(minLength: 8)
-
-            RoundInfoPill(category: category, remainingSeconds: remainingSeconds)
-
-            Spacer(minLength: 8)
-
-            if mode == .duo {
-                PlayerScorePill(label: "P2", score: scoreP2, accent: Color("BrownBrand"))
+        VStack {
+            HStack(spacing: 12) {
+                PlayerScorePill(label: mode == .solo ? "Score" : "P1",
+                                score: scoreP1, accent: Color("OrangeBrand"))
+                Spacer()
+                if mode == .duo {
+                    PlayerScorePill(label: "P2", score: scoreP2, accent: Color("BrownBrand"))
+                }
             }
+            Spacer()
+            GameExitButton(action: onExit)
+                .padding(.bottom, 20)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+    }
+}
+
+// MARK: - SkipButton
+
+struct SkipButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        VStack {
+            HStack {
+                Spacer()
+                RoleButton(title: "Skip", size: .md, variant: .primary, width: 96, height: 40, action: action)
+            }
+            .offset(x: 20, y: -160)
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
@@ -195,11 +226,7 @@ struct GameTopBar: View {
 #Preview(traits: .landscapeLeft) {
     ZStack {
         Color.black.ignoresSafeArea()
-        VStack {
-            GameTopBar(mode: .duo, scoreP1: 8, scoreP2: -1, category: "Animals", remainingSeconds: 83)
-            Spacer()
-            GameExitButton(action: {})
-                .padding(.bottom, 20)
-        }
+        RoundHeader(seconds: 100, category: "Animals", raised: true)
+        PlayingHUD(mode: .duo, scoreP1: 8, scoreP2: -1, onExit: {})
     }
 }

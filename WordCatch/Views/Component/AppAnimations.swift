@@ -27,6 +27,14 @@ extension Animation {
     static let screenSwitch: Animation = .easeInOut(duration: 0.45)
     // Tutorial page changes.
     static let pageSwitch: Animation = .easeInOut(duration: 0.35)
+
+    // — Tutorial intro —
+    // Phase cards (Let's Try / Ready) appearing & swapping.
+    static let tutorialPhase: Animation = .spring(response: 0.4, dampingFraction: 0.7)
+    // Catch-word card popping in big & centred.
+    static let bannerReveal: Animation = .spring(response: 0.45, dampingFraction: 0.7)
+    // Catch-word card zooming down into its small top-banner slot.
+    static let bannerShrink: Animation = .spring(response: 0.55, dampingFraction: 0.82)
 }
 
 // MARK: - Transitions

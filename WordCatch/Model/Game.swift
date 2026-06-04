@@ -55,7 +55,7 @@ final class Game {
     private(set) var currentCategory = WordCategory.animals
     private(set) var remainingSeconds = 10
 
-    let roundDuration: CFTimeInterval = 10
+    let roundDuration: CFTimeInterval = 30
 
     // MARK: - Tuning knobs
 
@@ -91,7 +91,7 @@ final class Game {
                 WordMeaning(word: "cactus", meaning: "kaktus"),
                 WordMeaning(word: "orchid", meaning: "anggrek")
             ],
-            incorrectWords: ["nose", "three", "loaf", "glass", "flour", "bottle", "fan", "mouse", "campus", "orbit"]
+            incorrectWords: ["nose", "threee", "loaf", "glass", "flour", "bottle", "fan", "mouse", "campus", "orbit"]
         ),
         WordCategory(
             name: "Stationery",

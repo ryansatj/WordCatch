@@ -50,7 +50,7 @@ struct AirplayOptionScreen: View {
                     .frame(maxWidth: 160)
 
                     RoleButton(
-                        title: "continue",
+                        title: "Continue",
                         size: .md,
                         variant: .primary,
                         action: onContinue
