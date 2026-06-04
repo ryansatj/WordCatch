@@ -28,6 +28,9 @@ struct Gameplay: View {
     @State private var showCategoryPrompt = false
     @State private var showHUD = false
     @State private var endFlowStep: EndFlowStep? = nil
+    @State private var showTutorial = true
+    @State private var tutorialCategory: WordCategory = .animals
+
 
     var body: some View {
         GeometryReader { geo in
@@ -74,14 +77,32 @@ struct Gameplay: View {
                     endOverlay(for: endFlowStep, size: geo.size)
                         .transition(.opacity)
                 }
+                if showTutorial {
+                    TutorialScreen(
+                        mode: mode,
+                        category: tutorialCategory, 
+                        hands: { manager.tangan },
+                        size: geo.size,
+                        onFinished: {
+                            withAnimation(.easeOut(duration: 0.4)) { showTutorial = false }
+                            startSequence()
+                        }
+                    )
+                    .ignoresSafeArea()
+                    .zIndex(5)
+                    .transition(.opacity)
+                }
             }
             .onAppear {
                 OrientationManager.shared.lockLandscape()
                 manager.start()
                 game.hands = { manager.tangan }
                 game.size = geo.size
+                manager.gameMode = mode
                 prepareRound()
-                startSequence()
+                tutorialCategory = game.currentCategory
+                cameraReady = true
+                showTutorial = true
             }
             .onChange(of: geo.size) { _, s in game.size = s }
             .onChange(of: game.isFinished) { _, isFinished in
