@@ -23,10 +23,7 @@ struct SplashScreen: View {
 
     var body: some View {
         ZStack {
-            Image("bg2")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
+            CelebrationBackground()
 
             VStack(spacing: 12) {
                 Image("SplashMascot")
