@@ -25,6 +25,7 @@ private enum TutorialPhase: Equatable {
     case catchWord
     case countdown(Int)
     case playing
+    case finished
 }
 
 // MARK: - Main View
@@ -35,7 +36,7 @@ struct TutorialScreen: View {
     var hands: () -> [HandSnapshot]
     var size: CGSize
     var onFinished: () -> Void
-
+    
     @State private var phase: TutorialPhase = .letsTry
     @State private var p1Done = false
     @State private var p2Done = false
@@ -43,13 +44,13 @@ struct TutorialScreen: View {
     @State private var timer: Timer? = nil
     @State private var last = CACurrentMediaTime()
     @State private var spawnIn: CFTimeInterval = 0.5
-
+    
     private let maxOnScreen = 4
     private let fallDuration: ClosedRange<Double> = 4.0...5.5
     private let catchRadiusFraction: CGFloat = 0.24
     private let spawnInterval: ClosedRange<CFTimeInterval> = 1.8...3.0
-
-
+    
+    
     var body: some View {
         ZStack {
             // Words + game UI — only during playing phase
@@ -58,7 +59,7 @@ struct TutorialScreen: View {
                     FallingWordView(text: w.text, isLeftSide: mode == .duo && w.x < size.width / 2)
                         .position(x: w.x, y: w.y)
                 }
-
+                
                 if mode == .duo {
                     // Center divider
                     Rectangle()
@@ -66,7 +67,7 @@ struct TutorialScreen: View {
                         .frame(width: 1)
                         .frame(maxHeight: .infinity)
                         .allowsHitTesting(false)
-
+                    
                     HStack(spacing: 0) {
                         sideOverlay(done: p1Done)
                         sideOverlay(done: p2Done)
@@ -74,12 +75,12 @@ struct TutorialScreen: View {
                 } else {
                     sideOverlay(done: p1Done)
                 }
-
+                
                 if !p1Done || (mode == .duo && !p2Done) {
                     instructionBanner
                 }
             }
-
+            
             // Phase overlays
             switch phase {
             case .letsTry:
@@ -93,49 +94,53 @@ struct TutorialScreen: View {
                     .transition(.opacity)
             case .playing:
                 EmptyView()
+                
+            case .finished:
+                ReadyOverlay()
+                    .transition(.scale(scale: 0.85).combined(with: .opacity))
             }
         }
         .onAppear(perform: runIntroThenStart)
         .onDisappear(perform: stopLoop)
     }
-
+    
     // MARK: - Intro sequence
-
+    
     private func runIntroThenStart() {
         Task {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { phase = .letsTry }
-            try? await Task.sleep(for: .milliseconds(1500))
-
+            try? await Task.sleep(for: .milliseconds(2000))
+            
             withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { phase = .catchWord }
             try? await Task.sleep(for: .milliseconds(1800))
-
+            
             for n in [3, 2, 1] {
                 withAnimation(.easeInOut(duration: 0.25)) { phase = .countdown(n) }
                 try? await Task.sleep(for: .milliseconds(900))
             }
-
+            
             withAnimation(.easeOut(duration: 0.3)) { phase = .playing }
             startLoop()
         }
     }
-
+    
     // MARK: - Sub-views
-
+    
     @ViewBuilder
     private func sideOverlay(done: Bool) -> some View {
         ZStack {
             if done && mode == .duo && !(p1Done && p2Done) {
                 Color.black.opacity(0.35)
                     .transition(.opacity)
-
+                
                 VStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 52))
-                        .foregroundStyle(.green)
+                        .font(.system(size: 100))
+                        .foregroundStyle(.orangeBrand).opacity(0.8)
                     Text("Nice catch!")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(.white)
-                    Text("Wait for partner...")
+                    Text("Ready, Waiting for partner...")
                         .font(.system(size: 14))
                         .foregroundStyle(.white.opacity(0.8))
                 }
@@ -145,7 +150,7 @@ struct TutorialScreen: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: done)
     }
-
+    
     private var instructionBanner: some View {
         VStack{
             VStack(spacing: 8) {
@@ -156,7 +161,7 @@ struct TutorialScreen: View {
                     .font(.system(size: 24, weight: .heavy, design: .rounded))
                     .foregroundStyle(Color("OrangeBrand"))
                     .padding(.horizontal, 60)
-
+                
             }
             .padding(.horizontal)
             .padding(.vertical)
@@ -170,28 +175,28 @@ struct TutorialScreen: View {
         }
         .padding(.top)
     }
-
+    
     private var bannerText: String {
         if mode == .solo { return "Catch an animal word to start!" }
         if p1Done && !p2Done { return "P2 — catch an animal word!" }
         if p2Done && !p1Done { return "P1 — catch an animal word!" }
         return "Each player: catch one animal word!"
     }
-
+    
     // MARK: - Game loop
-
+    
     private func startLoop() {
         last = CACurrentMediaTime()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { _ in
             tick()
         }
     }
-
+    
     private func stopLoop() {
         timer?.invalidate()
         timer = nil
     }
-
+    
     private func tick() {
         guard size != .zero else { return }
         let now = CACurrentMediaTime()
@@ -206,38 +211,38 @@ struct TutorialScreen: View {
     private func randomX() -> CGFloat {
         let margin: CGFloat = 60
         let center = size.width / 2
-
+        
         if mode == .solo {
             return .random(in: margin...(size.width - margin))
         }
-
+        
         let leftAvail  = !p1Done
         let rightAvail = !p2Done
-
+        
         if leftAvail && rightAvail {
             return Bool.random()
-                ? .random(in: margin...(center - margin))
-                : .random(in: (center + margin)...(size.width - margin))
+            ? .random(in: margin...(center - margin))
+            : .random(in: (center + margin)...(size.width - margin))
         } else if leftAvail {
             return .random(in: margin...(center - margin))
         } else {
             return .random(in: (center + margin)...(size.width - margin))
         }
     }
-
+    
     private func spawnIfNeeded(dt: CFTimeInterval) {
         spawnIn -= dt
         guard spawnIn <= 0, words.count < maxOnScreen else {
             if words.count >= maxOnScreen { spawnIn = 0.4 }
             return
         }
-
+        
         let animals = WordCategory.animals
         let prompt = animals.randomPrompt()
         let duration = Double.random(in: fallDuration)
         let speed = CGFloat(size.height) / CGFloat(duration)
         let x = randomX()
-
+        
         words.append(TutorialWord(
             text: prompt.text,
             isCorrect: prompt.isCorrect,
@@ -247,30 +252,30 @@ struct TutorialScreen: View {
         ))
         spawnIn = .random(in: spawnInterval)
     }
-     
+    
     private func moveWords(dt: CFTimeInterval) {
         for i in words.indices {
             words[i].y += words[i].speed * CGFloat(dt)
         }
     }
-
+    
     private func checkCatches() {
         let radius = min(size.width, size.height) * catchRadiusFraction
         let center = size.width / 2
-
+        
         let openPalms = hands()
             .filter { $0.isOpen }
             .map { CGPoint(
                 x: $0.palmCenter.x * size.width,
                 y: (1 - $0.palmCenter.y) * size.height
             )}
-
+        
         for i in words.indices where !words[i].caught {
             guard words[i].isCorrect else { continue }
-
+            
             let wp = CGPoint(x: words[i].x, y: words[i].y)
             let isLeft = words[i].x < center
-
+            
             let relevantPalms: [CGPoint]
             if mode == .duo {
                 if isLeft && p1Done { continue }
@@ -279,32 +284,40 @@ struct TutorialScreen: View {
             } else {
                 relevantPalms = openPalms
             }
-
+            
             if relevantPalms.contains(where: { hypot(wp.x - $0.x, wp.y - $0.y) < radius }) {
                 words[i].caught = true
                 handleCatch(isLeftWord: isLeft)
             }
         }
     }
-
+    
     private func handleCatch(isLeftWord: Bool) {
         if mode == .solo {
             withAnimation(.spring()) { p1Done = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { onFinished() }
+            showFinished()
             return
         }
-
+        
         withAnimation(.spring()) {
             if isLeftWord { p1Done = true } else { p2Done = true }
         }
-
+        
         if p1Done && p2Done {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { onFinished() }
+            showFinished()
+        }
+    }
+    
+    private func showFinished() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            stopLoop()
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { phase = .finished }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                onFinished()
+            }
         }
     }
 }
-
-
 
 
 // MARK: - Preview
