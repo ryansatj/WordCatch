@@ -16,21 +16,34 @@ public struct ScoreResultScreen: View {
         if winner == 1 { return "PLAYER 2\nWINS!" }
         return "DRAW!"
     }
+    
+    
 
     public var body: some View {
         ZStack {
             CelebrationBackground()
 
             VStack(spacing: 18) {
-                Image("SplashMascot")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 140, height: 120)
-                    .offset(y: 40)
+             
 
                 if mode == .solo {
+                    
+                    Image("SplashMascot")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 140, height: 120)
+                        .offset(y: 40)
+                    
+                    
                     soloScoreCard
                 } else {
+                    
+                    Image("SplashMascot")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 140, height: 120)
+                        .offset(y: 20)
+                    
                     duoScoreContent
                 }
 
@@ -106,5 +119,5 @@ public struct ScoreResultScreen: View {
 }
 
 #Preview("Solo", traits: .landscapeRight) {
-    ScoreResultScreen(mode: .solo, winner: nil, scoreP1: 12, scoreP2: 0, onContinue: {})
+    ScoreResultScreen(mode: .duo, winner: 0, scoreP1: 12, scoreP2: 0, onContinue: {})
 }
