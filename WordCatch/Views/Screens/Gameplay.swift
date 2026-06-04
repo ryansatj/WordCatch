@@ -103,6 +103,7 @@ struct Gameplay: View {
                 tutorialCategory = game.currentCategory
                 cameraReady = true
                 showTutorial = true
+                UIApplication.shared.isIdleTimerDisabled = true
             }
             .onChange(of: geo.size) { _, s in game.size = s }
             .onChange(of: game.isFinished) { _, isFinished in
@@ -115,6 +116,7 @@ struct Gameplay: View {
             .onDisappear {
                 manager.stop()
                 game.stop()
+                UIApplication.shared.isIdleTimerDisabled = false
             }
         }
     }

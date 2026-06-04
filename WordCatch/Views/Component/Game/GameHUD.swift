@@ -15,24 +15,26 @@ struct PlayerScorePill: View {
     let accent: Color
 
     var body: some View {
-        HStack(spacing: 10) {
-            Text(label)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
-                .padding(.horizontal, 11)
-                .padding(.vertical, 5)
-                .background(Capsule().fill(accent))
+        // Same reusable RoleButton chrome as RoundInfoPill; the accent colours
+        // the label chip + score so it stays a non-interactive status display.
+        RoleButton(size: .lg, variant: .secondary, width: 132, height: 64, action: {}) {
+            HStack(spacing: 10) {
+                Text(label)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 5)
+                    .background(Capsule().fill(accent))
 
-            Text("\(score)")
-                .font(.system(size: 32, weight: .heavy, design: .rounded))
-                .foregroundColor(.white)
-                .contentTransition(.numericText())
-                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: score)
+                Text("\(score)")
+                    .font(.system(size: 30, weight: .heavy, design: .rounded))
+                    .foregroundColor(accent)
+                    .contentTransition(.numericText())
+                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: score)
+            }
+            .padding(.horizontal, 12)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 7)
-        .background(Capsule().fill(.black.opacity(0.6)))
-        .overlay(Capsule().strokeBorder(accent.opacity(0.85), lineWidth: 2))
+        .allowsHitTesting(false)
     }
 }
 
@@ -40,14 +42,11 @@ struct PlayerScorePill: View {
 
 struct PlayerDivider: View {
     var body: some View {
-        LinearGradient(
-            colors: [Color("BrownBrand").opacity(1.0)],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        .frame(width: 2)
-        .frame(maxHeight: .infinity)
-        .ignoresSafeArea()
+        Rectangle()
+            .fill(Color("BrownBrand"))
+            .frame(width: 2)
+            .frame(maxHeight: .infinity)
+            .ignoresSafeArea()
     }
 }
 
@@ -64,24 +63,28 @@ struct RoundInfoPill: View {
     }
 
     var body: some View {
-        VStack(spacing: 4) {
-            Text("Find \(category)")
-                .font(.system(size: 20, weight: .heavy, design: .rounded))
-                .foregroundColor(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+        // Reuses the resizable RoleButton for a consistent look; it's a status
+        // display, not a control, so hit-testing is disabled.
+        RoleButton(size: .lg, variant: .secondary, width: 240, height: 64, action: {}) {
+            VStack(spacing: 2) {
+                Text("Find \(category)")
+                    .font(.system(size: 19, weight: .heavy, design: .rounded))
+                    .foregroundColor(Color("BrownBrand"))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
 
-            Text(timeText)
-                .font(.system(size: 17, weight: .bold, design: .rounded))
-                .foregroundColor(Color("OrangeBrand"))
-                .contentTransition(.numericText())
-                .animation(.linear(duration: 0.2), value: remainingSeconds)
+                Text(timeText)
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundColor(Color("OrangeBrand"))
+                    .contentTransition(.numericText())
+                    .animation(.linear(duration: 0.2), value: remainingSeconds)
+            }
+            .padding(.horizontal, 12)
+            
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 8)
-        .frame(minWidth: 210)
-        .background(Capsule().fill(Color("BrownBrand").opacity(0.92)))
-        .overlay(Capsule().strokeBorder(.white.opacity(0.35), lineWidth: 1.5))
+        .allowsHitTesting(false)
+        
+
     }
 }
 
