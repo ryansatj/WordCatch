@@ -42,12 +42,10 @@ struct IconButton2: View {
         }
     }
 
-    /// Paints a black 0.3 overlay on the border for primary — matches the shadow's darker-orange look.
     private var borderHasDarkOverlay: Bool {
         variant == .primary
     }
 
-    /// nil ⇒ auto-darken background (primary). Explicit color for secondary.
     private var shadowFill: Color? {
         switch variant {
         case .primary:   return nil

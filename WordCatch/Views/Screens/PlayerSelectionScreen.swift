@@ -34,7 +34,6 @@ struct PlayerSelectionScreen: View {
                 .padding(.horizontal, 20)
 
                 HStack(spacing: 14) {
-                    // Left: Solo
                     RoleButton(variant: .secondary,
                                width: 300,
                                height: 250,
@@ -44,7 +43,8 @@ struct PlayerSelectionScreen: View {
                                           image: "MascotFace")
                     }
 
-                    // Right: Duo
+                    
+                    
                     RoleButton(variant: .primary,
                                width: 400,
                                height: 250,

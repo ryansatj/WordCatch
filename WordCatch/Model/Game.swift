@@ -265,25 +265,21 @@ final class Game {
     }
 
     private func catchWords() {
-        let center = size.width / 2
         let radius = min(size.width, size.height) * catchRadiusFraction
+        // No zone restriction: any open hand can catch any word, even across
+        // the centre line, so players can reach into the other side to troll.
+        // Scoring still follows the word's side (see addScore), so a steal on
+        // the opponent's half lands on the opponent's score.
         let palms = hands().filter { $0.isOpen }
             .map { CGPoint(x: $0.palmCenter.x * size.width, y: (1 - $0.palmCenter.y) * size.height) }
 
         for i in words.indices where !words[i].caught {
             let wordPoint = CGPoint(x: words[i].x, y: words[i].y)
-            let palmsForWord = palmsFor(wordX: words[i].x, center: center, palms: palms)
-
-            if palmsForWord.contains(where: { hypot(wordPoint.x - $0.x, wordPoint.y - $0.y) < radius }) {
+            if palms.contains(where: { hypot(wordPoint.x - $0.x, wordPoint.y - $0.y) < radius }) {
                 words[i].caught = true
                 addScore(forWordX: words[i].x, isCorrect: words[i].isCorrect)
             }
         }
-    }
-
-    private func palmsFor(wordX: CGFloat, center: CGFloat, palms: [CGPoint]) -> [CGPoint] {
-        guard mode == .duo else { return palms }
-        return palms.filter { wordX < center ? $0.x < center : $0.x >= center }
     }
 
     private func addScore(forWordX wordX: CGFloat, isCorrect: Bool) {
