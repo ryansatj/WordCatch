@@ -3,6 +3,7 @@
 //  Dipisahkan dari GameOverlays.swift agar lebih modular
 import SwiftUI
 
+
  struct LearningScreen: View {
     let category: WordCategory
     let onPlayAgain: () -> Void
@@ -54,4 +55,8 @@ import SwiftUI
             .padding(.horizontal, 56)
         }
     }
+}
+
+#Preview(traits: .landscapeRight) {
+    LearningScreen(category: .animals, onPlayAgain: {}, onBackHome: {})
 }
