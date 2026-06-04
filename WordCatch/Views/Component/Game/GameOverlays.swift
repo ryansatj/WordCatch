@@ -140,9 +140,6 @@ struct CelebrationBackground: View {
                 .rotationEffect(.degrees(spin ? 360 : 0))
                 .animation(.linear(duration: 85).repeatForever(autoreverses: false), value: spin)
                 .ignoresSafeArea()
-
-        
-            .ignoresSafeArea()
         }
         .onAppear { spin = true }
     }

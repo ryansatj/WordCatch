@@ -315,7 +315,7 @@ final class Game {
     }
 }
 
-private extension WordCategory {
+extension WordCategory {
     static let animals = WordCategory(
         name: "Animals",
         correctWords: [
