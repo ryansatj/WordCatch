@@ -21,6 +21,8 @@ private struct TutorialWord: Identifiable {
 }
 
 private enum TutorialPhase: Equatable {
+    case positionSetup
+    case tryHands
     case letsTry
     case catchWord
     case playing
@@ -36,7 +38,7 @@ struct TutorialScreen: View {
     var size: CGSize
     var onFinished: () -> Void
     
-    @State private var phase: TutorialPhase = .letsTry
+    @State private var phase: TutorialPhase = .positionSetup
     @State private var p1Done = false
     @State private var p2Done = false
     @State private var words: [TutorialWord] = []
@@ -80,6 +82,14 @@ struct TutorialScreen: View {
 
 
             switch phase {
+            case .positionSetup:
+                PositionSetupView(mode: mode, hands: hands) {
+                    withAnimation(.tutorialPhase) { phase = .tryHands }
+                }
+                .transition(.opacity)
+            case .tryHands:
+                TryHandsView(mode: mode, hands: hands, onReady: runIntroThenStart)
+                    .transition(.opacity)
             case .letsTry:
                 LetsTryOverlay()
                     .transition(.scale(scale: 0.85).combined(with: .opacity))
@@ -90,7 +100,6 @@ struct TutorialScreen: View {
                 EmptyView()
             }
         }
-        .onAppear(perform: runIntroThenStart)
         .onDisappear(perform: stopLoop)
     }
     
@@ -122,13 +131,13 @@ struct TutorialScreen: View {
                     .transition(.opacity)
                 
                 VStack(spacing: 10) {
-                    Image(systemName: "checkmark.circle.fill")
+                    Image("checkmark.circle.fill")
                         .font(.system(size: 64))
                         .foregroundStyle(Color("OrangeBrand"))
                     Text("Nice catch!")
                         .font(.system(size: 22, weight: .black, design: .rounded))
                         .foregroundStyle(.brownBrand)
-                    Text("Ready — waiting for partner…")
+                    Text("Ready  waiting for partner…")
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .foregroundStyle(Color("BrownBrand").opacity(0.7))
                 }
