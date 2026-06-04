@@ -22,10 +22,11 @@ public struct ScoreResultScreen: View {
             CelebrationBackground()
 
             VStack(spacing: 18) {
-                Image("MascotFace")
+                Image("SplashMascot")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 122, height: 92)
+                    .frame(width: 140, height: 120)
+                    .offset(y: 40)
 
                 if mode == .solo {
                     soloScoreCard
@@ -36,8 +37,10 @@ public struct ScoreResultScreen: View {
                 RoleButton(title: "Continue", size: .md, action: onContinue)
                     .frame(width: 165)
                     .padding(.top, 2)
+                    .padding(.bottom, 24)
             }
             .padding(.horizontal, 48)
+            
         }
     }
 
@@ -100,4 +103,8 @@ public struct ScoreResultScreen: View {
         )
         .shadow(color: .black.opacity(0.18), radius: 3, y: 3)
     }
+}
+
+#Preview("Solo", traits: .landscapeRight) {
+    ScoreResultScreen(mode: .solo, winner: nil, scoreP1: 12, scoreP2: 0, onContinue: {})
 }
