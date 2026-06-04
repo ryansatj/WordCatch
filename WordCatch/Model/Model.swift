@@ -25,7 +25,7 @@ struct FallingWord: Identifiable {
 }
 
 struct HandSnapshot: Identifiable {
-    let id: Int
+    let id: UUID
     var points: [VNHumanHandPoseObservation.JointName: CGPoint]
     var isOpen: Bool
     var palmCenter: CGPoint

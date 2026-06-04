@@ -38,6 +38,9 @@ struct TutorialCarouselScreen: View {
                 .ignoresSafeArea()
 
             VStack{
+                
+                
+                
                 LottieView(animation: .named(pages[index].image))
                     .playing()
                     .resizable()
@@ -48,6 +51,10 @@ struct TutorialCarouselScreen: View {
                     .offset(x: -50, y:0)
                 
                 PagingDots(count: 3, index: index)
+                
+                
+                
+                
             }
 
 
