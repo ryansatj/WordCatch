@@ -25,7 +25,8 @@ struct Gameplay: View {
 
     @State private var cameraReady = false
     @State private var countdownValue: Int? = nil
-    @State private var showCategoryPrompt = false
+    @State private var showRoundHeader = false
+    @State private var pregameRaised = false
     @State private var showHUD = false
     @State private var endFlowStep: EndFlowStep? = nil
     @State private var showTutorial = true
@@ -36,38 +37,32 @@ struct Gameplay: View {
         GeometryReader { geo in
             ZStack {
                 CameraPreviewView(session: manager.session).ignoresSafeArea()
-
                 HandSkeletonView(hands: manager.tangan)
 
                 if mode == .duo {
                     PlayerDivider()
                 }
+                
 
                 wordsLayer(in: geo.size)
 
+                if showRoundHeader {
+                    RoundHeader(seconds: game.remainingSeconds,
+                                category: game.currentCategory.name,
+                                raised: pregameRaised)
+                        .transition(.opacity)
+                }
+
                 if showHUD {
-                    VStack {
-                        GameTopBar(
-                            mode: mode,
-                            scoreP1: game.ScoreP1,
-                            scoreP2: game.ScoreP2,
-                            category: game.currentCategory.name,
-                            remainingSeconds: game.remainingSeconds
-                        )
-                        Spacer()
-                        GameExitButton(action: exit)
-                            .padding(.bottom, 20)
-                    }
-                    .transition(.opacity)
+                    PlayingHUD(mode: mode,
+                               scoreP1: game.ScoreP1,
+                               scoreP2: game.ScoreP2,
+                               onExit: exit)
+                        .transition(.opacity)
                 }
 
                 if !cameraReady {
                     CameraLoadingOverlay()
-                        .transition(.opacity)
-                }
-
-                if showCategoryPrompt {
-                    CategoryPromptOverlay(category: game.currentCategory.name)
                         .transition(.opacity)
                 }
 
@@ -80,17 +75,18 @@ struct Gameplay: View {
                 if showTutorial {
                     TutorialScreen(
                         mode: mode,
-                        category: tutorialCategory, 
+                        category: tutorialCategory,
                         hands: { manager.tangan },
                         size: geo.size,
-                        onFinished: {
-                            withAnimation(.easeOut(duration: 0.4)) { showTutorial = false }
-                            startSequence()
-                        }
+                        onFinished: finishTutorial
                     )
                     .ignoresSafeArea()
                     .zIndex(5)
                     .transition(.opacity)
+
+                    SkipButton(action: finishTutorial)
+                        .zIndex(6)
+                        .transition(.opacity)
                 }
             }
             .onAppear {
@@ -102,8 +98,8 @@ struct Gameplay: View {
                 prepareRound()
                 tutorialCategory = game.currentCategory
                 cameraReady = true
-                showTutorial = true
                 UIApplication.shared.isIdleTimerDisabled = true
+                if !showTutorial { startSequence() }
             }
             .onChange(of: geo.size) { _, s in game.size = s }
             .onChange(of: game.isFinished) { _, isFinished in
@@ -154,22 +150,28 @@ struct Gameplay: View {
         }
     }
 
+    private func finishTutorial() {
+        guard showTutorial else { return }
+        withAnimation(.easeOut(duration: 0.4)) { showTutorial = false }
+        startSequence()
+    }
+
     private func prepareRound() {
         game.prepareRound(mode: mode)
         showHUD = false
-        showCategoryPrompt = false
+        showRoundHeader = false
+        pregameRaised = false
         endFlowStep = nil
         countdownValue = nil
     }
 
     private func startSequence() {
         Task {
-            try? await Task.sleep(for: .milliseconds(900))
-            withAnimation(.hudReveal) { cameraReady = true }
-
-            withAnimation(.hudReveal) { showCategoryPrompt = true }
-            try? await Task.sleep(for: .seconds(2))
-            withAnimation(.hudReveal) { showCategoryPrompt = false }
+            try? await Task.sleep(for: .milliseconds(500))
+            withAnimation(.bannerReveal) { showRoundHeader = true }
+            try? await Task.sleep(for: .milliseconds(1200))
+            withAnimation(.bannerShrink) { pregameRaised = true }
+            try? await Task.sleep(for: .milliseconds(700))
 
             runCountdown()
         }
@@ -200,5 +202,6 @@ struct Gameplay: View {
     }
 }
 
-#Preview(traits: .landscapeRight) { Gameplay(mode: .duo) }
+#Preview(traits: .landscapeRight) { Gameplay(mode: .duo,) }
+
 

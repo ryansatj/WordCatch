@@ -91,7 +91,7 @@ final class Game {
                 WordMeaning(word: "cactus", meaning: "kaktus"),
                 WordMeaning(word: "orchid", meaning: "anggrek")
             ],
-            incorrectWords: ["nose", "three", "loaf", "glass", "flour", "bottle", "fan", "mouse", "campus", "orbit"]
+            incorrectWords: ["nose", "threee", "loaf", "glass", "flour", "bottle", "fan", "mouse", "campus", "orbit"]
         ),
         WordCategory(
             name: "Stationery",
