@@ -147,19 +147,28 @@ struct TutorialScreen: View {
     }
 
     private var instructionBanner: some View {
-        VStack {
-            Text(bannerText)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .background(.black.opacity(0.55))
-                .clipShape(Capsule())
-                .padding(.top, 16)
+        VStack{
+            VStack(spacing: 8) {
+                Text("Catch the word in")
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.brownBrand)
+                Text("Animal")
+                    .font(.system(size: 24, weight: .heavy, design: .rounded))
+                    .foregroundStyle(Color("OrangeBrand"))
+                    .padding(.horizontal, 60)
+
+            }
+            .padding(.horizontal)
+            .padding(.vertical)
+            .background(Color(.creamBrand), in: RoundedRectangle(cornerRadius: 24))
+            .shadow(radius: 1)
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .strokeBorder(.white.opacity(0.25), lineWidth: 1.5)
+            )
             Spacer()
         }
-        .transition(.opacity)
-        .animation(.easeInOut, value: p1Done || p2Done)
+        .padding(.top)
     }
 
     private var bannerText: String {
@@ -296,25 +305,7 @@ struct TutorialScreen: View {
 }
 
 
-private struct CatchWordOverlay: View {
-    var body: some View {
-        VStack(spacing: 8) {
-            Text("Catch the word")
-                .font(.system(size: 20, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white.opacity(0.85))
-            Text("Animal")
-                .font(.system(size: 40, weight: .black, design: .rounded))
-                .foregroundStyle(Color("OrangeBrand"))
-        }
-        .padding(.horizontal, 44)
-        .padding(.vertical, 28)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24))
-        .overlay(
-            RoundedRectangle(cornerRadius: 24)
-                .strokeBorder(.white.opacity(0.25), lineWidth: 1.5)
-        )
-    }
-}
+
 
 // MARK: - Preview
 

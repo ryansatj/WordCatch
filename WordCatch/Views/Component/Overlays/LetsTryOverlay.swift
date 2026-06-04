@@ -9,25 +9,29 @@ import SwiftUI
 
 struct LetsTryOverlay: View {
     var body: some View {
-        VStack(spacing: 12) {
+        ZStack{
+            VStack(spacing: 12) {
+                Text("Let's Try!")
+                    .font(.system(size: 38, weight: .black, design: .rounded))
+                    .foregroundStyle(.brownBrand)
+                    .padding(.top, 20)
+                    .padding(.horizontal)
+            }
+            .padding(.horizontal, 40)
+            .padding(.vertical, 28)
+            .background(Color(.creamBrand), in: RoundedRectangle(cornerRadius: 6))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(Color("OrangeBrand").opacity(1), lineWidth: 3)
+            )
             Image(.splashMascot)
                 .font(.system(size: 48))
                 .foregroundStyle(Color("OrangeBrand"))
-
-            Text("Let's Try!")
-                .font(.system(size: 32, weight: .black, design: .rounded))
-                .foregroundStyle(.brownBrand)
+                .offset(x: 0, y: -60)
         }
-        .padding(.horizontal, 40)
-        .padding(.vertical, 28)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24))
-        .overlay(
-            RoundedRectangle(cornerRadius: 24)
-                .strokeBorder(Color("OrangeBrand").opacity(0.7), lineWidth: 2.5)
-        )
     }
 }
 
-#Preview {
+#Preview(traits: .landscapeRight) {
     LetsTryOverlay()
 }
