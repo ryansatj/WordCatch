@@ -178,3 +178,4 @@ struct Gameplay: View {
 }
 
 #Preview(traits: .landscapeRight) { Gameplay(mode: .duo) }
+
