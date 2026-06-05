@@ -277,6 +277,7 @@ final class Game {
             let wordPoint = CGPoint(x: words[i].x, y: words[i].y)
             if palms.contains(where: { hypot(wordPoint.x - $0.x, wordPoint.y - $0.y) < radius }) {
                 words[i].caught = true
+                SoundManager.shared.play(words[i].isCorrect ? "rightCatch" : "wrongCatch")
                 addScore(forWordX: words[i].x, isCorrect: words[i].isCorrect)
             }
         }

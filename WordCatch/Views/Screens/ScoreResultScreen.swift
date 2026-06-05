@@ -12,9 +12,18 @@ public struct ScoreResultScreen: View {
 
     private var winnerTitle: String {
         if mode == .solo { return "YOUR SCORE" }
-        if winner == 0 { return "PLAYER 1\nWINS!" }
-        if winner == 1 { return "PLAYER 2\nWINS!" }
+        if winner == 0 { return "PLAYER 1 WINS!" }
+        if winner == 1 { return "PLAYER 2 WINS!" }
         return "DRAW!"
+    }
+
+    /// Title broken into lines so each renders on its own row reliably,
+    /// instead of depending on a "\n" that can collapse when space is tight.
+    private var winnerLines: [String] {
+        if mode == .solo { return ["YOUR SCORE"] }
+        if winner == 0 { return ["PLAYER 1", "WINS!"] }
+        if winner == 1 { return ["PLAYER 2", "WINS!"] }
+        return ["DRAW!"]
     }
     
     
@@ -60,7 +69,7 @@ public struct ScoreResultScreen: View {
     private var soloScoreCard: some View {
         VStack(spacing: 16) {
             Text("- \(winnerTitle) -")
-                .font(.system(size: 42, weight: .black, design: .rounded))
+                .font(.system(size: 38, weight: .black, design: .rounded))
                 .foregroundColor(Color("BrownBrand"))
                 .lineLimit(1)
                 .minimumScaleFactor(0.65)
@@ -80,12 +89,16 @@ public struct ScoreResultScreen: View {
 
     private var duoScoreContent: some View {
         VStack(spacing: 14) {
-            Text(winnerTitle)
-                .font(.system(size: 48, weight: .black, design: .rounded))
-                .foregroundColor(Color("BrownBrand"))
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.7)
+            VStack(spacing: 0) {
+                ForEach(winnerLines, id: \.self) { line in
+                    Text(line)
+                        .font(.system(size: 38, weight: .black, design: .rounded))
+                        .foregroundColor(line == "WINS!" ? Color("OrangeBrand") : Color("BrownBrand"))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+            }
+            .multilineTextAlignment(.center)
 
             HStack(spacing: 22) {
                 scoreCard(title: "PLAYER 1 SCORED", score: scoreP1, highlighted: winner == 0)

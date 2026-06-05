@@ -48,10 +48,18 @@ struct ContentView: View {
             }
         }
         .animation(.screenSwitch, value: screen)
+        .onAppear(perform: updateMusic)
+        .onChange(of: screen) { _, _ in updateMusic() }
     }
 
     private func advance(to next: Screen) {
         screen = next
+    }
+
+   
+    private func updateMusic() {
+        let track = screen == .game ? "inGame" : "outGame"
+        SoundManager.shared.playMusic(track, volume: 0.35)
     }
 }
 
