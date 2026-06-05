@@ -144,6 +144,7 @@ struct Gameplay: View {
         case .learning:
             LearningScreen(
                 category: game.currentCategory,
+                learnedWords: game.shownLearningWords,
                 onPlayAgain: { restart(in: size) },
                 onBackHome: exit
             )

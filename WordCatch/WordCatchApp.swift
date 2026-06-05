@@ -12,10 +12,24 @@ import UIKit
 struct WordCatchApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
+    @AppStorage("hasSeenOnboarding")
+    private var hasSeenOnboarding = false
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .preferredColorScheme(.light)   // lock to light; the UI isn't designed for dark mode
+
+            if hasSeenOnboarding {
+
+                ContentView()
+                    .preferredColorScheme(.light)
+
+            } else {
+
+                OnboardingScreen {
+                    hasSeenOnboarding = true
+                }
+                .preferredColorScheme(.light)
+            }
         }
     }
 }

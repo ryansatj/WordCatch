@@ -47,6 +47,7 @@ struct WordPrompt {
 @Observable
 final class Game {
     private(set) var words: [FallingWord] = []
+    private(set) var shownLearningWords: [WordMeaning] = []
     private(set) var ScoreP1 = 0
     private(set) var ScoreP2 = 0
     private(set) var winner: Int?
@@ -162,6 +163,7 @@ final class Game {
     func prepareRound(mode: GameMode) {
         self.mode = mode
         words = []
+        shownLearningWords = []
         ScoreP1 = 0
         ScoreP2 = 0
         winner = nil
@@ -175,6 +177,7 @@ final class Game {
 
     func start() {
         words = []
+        shownLearningWords = []
         ScoreP1 = 0
         ScoreP2 = 0
         winner = nil
@@ -233,6 +236,17 @@ final class Game {
         let duration = Double.random(in: fallDuration)
         let speed = CGFloat(Double(size.height) / duration)
         let prompt = currentCategory.randomPrompt()
+        
+        if prompt.isCorrect,
+           let word = currentCategory.correctWords.first(where: {
+               $0.word == prompt.text
+           }),
+           !shownLearningWords.contains(where: {
+               $0.word == word.word
+           }) {
+
+            shownLearningWords.append(word)
+        }
 
         words.append(FallingWord(
             text: prompt.text,
