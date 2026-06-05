@@ -294,6 +294,8 @@ struct TutorialScreen: View {
     }
     
     private func handleCatch(isLeftWord: Bool) {
+        SoundManager.shared.play("correct")
+
         if mode == .solo {
             withAnimation(.spring()) { p1Done = true }
             showFinished()

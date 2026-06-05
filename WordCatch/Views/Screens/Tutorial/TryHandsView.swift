@@ -124,7 +124,10 @@ struct TryHandsView: View {
 
         switch step {
         case .close:
-            advanceWhen(satisfied(snaps, isClosed)) { withAnimation { step = .open } }
+            advanceWhen(satisfied(snaps, isClosed)) {
+                SoundManager.shared.play("correct")
+                withAnimation { step = .open }
+            }
         case .open:
             advanceWhen(satisfied(snaps, isOpen)) { finish() }
         case .done:
@@ -157,6 +160,7 @@ struct TryHandsView: View {
     private func finish() {
         guard !done else { return }
         done = true
+        SoundManager.shared.play("correct")
         timer?.invalidate()
         withAnimation { step = .done }
         onReady()
