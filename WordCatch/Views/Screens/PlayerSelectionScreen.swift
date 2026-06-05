@@ -14,7 +14,7 @@ struct PlayerSelectionScreen: View {
 
     var body: some View {
         ZStack {
-            Image("bg2")
+            Image(.lanscapePolos)
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
@@ -34,7 +34,7 @@ struct PlayerSelectionScreen: View {
                 .padding(.horizontal, 20)
 
                 HStack(spacing: 14) {
-                    RoleButton(variant: .secondary,
+                    RoleButton(variant: .playerSelect,
                                width: 300,
                                height: 250,
                                action: { onSelect(.solo) }) {

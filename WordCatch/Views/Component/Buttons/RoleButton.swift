@@ -21,7 +21,7 @@ struct NoFadeButtonStyle: ButtonStyle {
 
 struct RoleButton<Content: View>: View {
     enum Variant {
-        case primary, secondary, ghost
+        case primary, secondary, ghost, playerSelect
     }
 
     enum Size {
@@ -42,7 +42,7 @@ struct RoleButton<Content: View>: View {
             switch self {
             case .xl: return .system(size: 18, weight: .bold, design: .rounded)
             case .lg: return .h2
-            case .md: return .bodyText
+            case .md: return .system(size: 14, weight: .medium, design: .rounded)
             case .sm: return .caption
             }
         }
@@ -87,8 +87,9 @@ struct RoleButton<Content: View>: View {
     private var background: Color {
         switch variant {
         case .primary:   return Color("OrangeBrand")
-        case .secondary: return .white
+        case .secondary: return Color(.creamBrand)
         case .ghost:     return .clear
+        case .playerSelect: return Color(.white)
         }
     }
 
@@ -96,6 +97,7 @@ struct RoleButton<Content: View>: View {
         switch variant {
         case .primary:           return .white
         case .secondary, .ghost: return Color("BrownBrand")
+        case .playerSelect : return Color("BrownBrand")
         }
     }
 
@@ -104,9 +106,9 @@ struct RoleButton<Content: View>: View {
         case .primary:   return Color("OrangeBrand")
         case .secondary: return Color("BrownBrand")
         case .ghost:     return nil
+        case .playerSelect: return Color(.brownBrand)
         }
     }
-
 
     private var borderHasDarkOverlay: Bool {
         variant == .primary
@@ -118,6 +120,7 @@ struct RoleButton<Content: View>: View {
         case .primary:   return nil
         case .secondary: return Color("BrownBrand")
         case .ghost:     return nil
+        case .playerSelect: return Color(.brownBrand)
         }
     }
 
@@ -228,6 +231,13 @@ extension RoleButton where Content == Text {
         }
 
         RoleButton(title: "Back", size: .sm, variant: .ghost, action: {})
+        
+        RoleButton(size: .lg, variant: .playerSelect, action: {}){
+            HStack(spacing: 10) {
+                Image(systemName: "person.fill")
+                Text("Pick Role")
+            }
+        }
     }
     .padding(24)
 }
