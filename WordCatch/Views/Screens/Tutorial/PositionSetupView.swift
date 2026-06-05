@@ -159,11 +159,17 @@ struct PositionSetupView: View {
     }
 
     private func setLeft(_ s: SetupState) {
-        if s != leftState { withAnimation { leftState = s } }
+        if s != leftState {
+            if s == .ready { SoundManager.shared.play("correct") }
+            withAnimation { leftState = s }
+        }
     }
 
     private func setRight(_ s: SetupState) {
-        if s != rightState { withAnimation { rightState = s } }
+        if s != rightState {
+            if s == .ready { SoundManager.shared.play("correct") }
+            withAnimation { rightState = s }
+        }
     }
 
     // Continues once every zone has stayed `.ready` for `holdToReady`.
