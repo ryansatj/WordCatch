@@ -4,17 +4,7 @@
 //
 //  Created by Gung  on 26/05/26.
 //
-//  Vision reports hand poses with NO identity across frames: every frame it
-//  re-numbers the hands, so without help they swap, flicker, and ghost-catch.
-//  HandDetectionModel adds the missing stability layer:
-//    1. Persistent identity  — match each hand to the nearest hand from the
-//       previous frame and carry its UUID forward.
-//    2. Hard cap             — keep the highest-confidence detections (4 in
-//       duo, 2 in solo). Hands are NOT bound to a side: a hand can roam the
-//       whole screen and catch words on the other player's half (trolling).
-//    3. isOpen buffer        — open/closed flips after a couple of agreeing
-//       frames, low enough to feel responsive.
-//
+
 
 import AVFoundation
 import Vision

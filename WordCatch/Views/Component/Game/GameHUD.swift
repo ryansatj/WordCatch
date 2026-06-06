@@ -54,12 +54,29 @@ struct PlayerDivider: View {
 struct TimerPill: View {
     let seconds: Int
 
+    // Chunky-pill styling (mirrors RoleButton .primary so the look matches).
+    private let width: CGFloat = 150
+    private let height: CGFloat = 54
+    private let radius: CGFloat = 16
+    private let shadowDepth: CGFloat = 4
+
+    /// Final 5 seconds: turn the pill red to signal time's almost up.
+    private var urgent: Bool { seconds <= 5 }
+    private var color: Color { urgent ? .red : Color("OrangeBrand") }
+
     private var timeText: String {
         String(format: "%02d:%02d", seconds / 60, seconds % 60)
     }
 
     var body: some View {
-        RoleButton(size: .lg, variant: .primary, width: 150, height: 54, action: {}) {
+        ZStack(alignment: .top) {
+            ZStack {
+                RoundedRectangle(cornerRadius: radius).fill(color)
+                RoundedRectangle(cornerRadius: radius).fill(Color.black.opacity(0.3))
+            }
+            .frame(width: width, height: height)
+            .offset(y: shadowDepth)
+
             HStack(spacing: 8) {
                 Image(systemName: "clock.fill")
                     .font(.system(size: 20, weight: .bold))
@@ -68,7 +85,17 @@ struct TimerPill: View {
                     .contentTransition(.numericText())
             }
             .foregroundColor(.white)
+            .frame(width: width, height: height)
+            .background(RoundedRectangle(cornerRadius: radius).fill(color))
+            .overlay(
+                ZStack {
+                    RoundedRectangle(cornerRadius: radius).strokeBorder(color, lineWidth: 2)
+                    RoundedRectangle(cornerRadius: radius).strokeBorder(Color.black.opacity(0.3), lineWidth: 2)
+                }
+            )
         }
+        .frame(height: height + shadowDepth)
+        .animation(.easeInOut(duration: 0.25), value: urgent)
         .allowsHitTesting(false)
     }
 }

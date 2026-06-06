@@ -102,8 +102,13 @@ struct Gameplay: View {
                 if !showTutorial { startSequence() }
             }
             .onChange(of: geo.size) { _, s in game.size = s }
+            .onChange(of: game.remainingSeconds) { _, seconds in
+                // Fire once as the clock enters the final 5 seconds.
+                if seconds == 5 { SoundManager.shared.play("5second") }
+            }
             .onChange(of: game.isFinished) { _, isFinished in
                 guard isFinished else { return }
+                SoundManager.shared.play("Timesup")
                 withAnimation(.hudReveal) {
                     showHUD = false
                     endFlowStep = .timeUp
@@ -179,6 +184,7 @@ struct Gameplay: View {
 
     private func runCountdown() {
         Task {
+            SoundManager.shared.play("ready321")
             for n in [3, 2, 1, 0] {
                 countdownValue = n
                 try? await Task.sleep(for: .milliseconds(950))
