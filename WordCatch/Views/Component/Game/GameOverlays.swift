@@ -60,10 +60,13 @@ struct CountdownOverlay: View {
 struct TimeUpOverlay: View {
     let onContinue: () -> Void
 
+    @State private var appeared = false
+    @State private var hintVisible = false
+
     var body: some View {
         Button(action: onContinue) {
             ZStack {
-                Color.black.opacity(0.58).ignoresSafeArea()
+                Color.black.opacity(appeared ? 0.58 : 0).ignoresSafeArea()
 
                 VStack(spacing: 4) {
                     Image("MascotFace")
@@ -77,10 +80,23 @@ struct TimeUpOverlay: View {
                     Text("Tap to continue")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundColor(.white.opacity(0.85))
+                        .opacity(hintVisible ? 1 : 0)
                 }
+                // Pop in: starts small + faded, springs up to full size.
+                .scaleEffect(appeared ? 1 : 0.5)
+                .opacity(appeared ? 1 : 0)
             }
         }
         .buttonStyle(NoFadeButtonStyle())
+        .onAppear {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.6)) {
+                appeared = true
+            }
+            // Fade the "tap to continue" hint in slightly after the pop.
+            withAnimation(.easeIn(duration: 0.35).delay(0.45)) {
+                hintVisible = true
+            }
+        }
     }
 }
 
