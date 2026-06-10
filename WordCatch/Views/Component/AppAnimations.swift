@@ -24,7 +24,7 @@ extension Animation {
     //Screen state
     static let hudReveal: Animation = .easeOut(duration: 0.35)
     //Top-level screen switch in ContentView.
-    static let screenSwitch: Animation = .easeInOut(duration: 0.45)
+    static let screenSwitch: Animation = .spring(response: 0.5, dampingFraction: 0.9)
     // Tutorial page changes.
     static let pageSwitch: Animation = .easeInOut(duration: 0.35)
 
@@ -40,15 +40,9 @@ extension Animation {
 // MARK: - Transitions
 
 extension AnyTransition {
-    // Slide+fade for forward navigation (PlayerSelect → AirPlay → Tutorial → Game).
-    static let slideForward: AnyTransition = .asymmetric(
-        insertion: .move(edge: .trailing).combined(with: .opacity),
-        removal:   .move(edge: .leading).combined(with: .opacity)
-    )
+    // Simple crossfade for navigation — screens fade in/out in place,
+    // no sliding or stacking.
+    static let slideForward: AnyTransition = .opacity
 
-    // Slide+fade for backward navigation.
-    static let slideBackward: AnyTransition = .asymmetric(
-        insertion: .move(edge: .leading).combined(with: .opacity),
-        removal:   .move(edge: .trailing).combined(with: .opacity)
-    )
+    static let slideBackward: AnyTransition = .opacity
 }

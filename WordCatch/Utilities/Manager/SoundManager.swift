@@ -10,10 +10,24 @@
 //
 //      SoundManager.shared.play("correct")
 //
+//  Volume is layered: every sound's final loudness is
+//      masterVolume * (sfxVolume or musicVolume) * per-call volume
+//  so you can tune one channel without touching the call sites.
+//
 //  Sound effects can overlap; background music is a single looping track.
 //
 
 import AVFoundation
+
+//  Sound file names used around the app (drop a matching file in the project):
+//    "ButtonClick" button press
+//    "correct"    caught a correct word / tutorial success
+//    "wrong"      caught a distractor word (-1)
+//    "countdown"  3-2-1 tick
+//    "go"         round starts ("GO!")
+//    "timeUp"     round over
+//    "win"        score / victory screen
+//    "bgm"        looping background music
 
 final class SoundManager {
 
@@ -23,13 +37,38 @@ final class SoundManager {
         configureSession()
     }
 
+    // MARK: - Volume controls
+
     /// Master switch — flip to false to mute everything.
-    var isEnabled: Bool = true
+    var isEnabled: Bool = true {
+        didSet { applyMusicVolume() }
+    }
+
+    /// Overall loudness for the whole app (0...1). Scales both SFX and music.
+    var masterVolume: Float = 1.0 {
+        didSet { masterVolume = masterVolume.clampedVolume; applyMusicVolume() }
+    }
+
+    /// Loudness for one-shot sound effects only (0...1).
+    var sfxVolume: Float = 1.0 {
+        didSet { sfxVolume = sfxVolume.clampedVolume }
+    }
+
+    /// Loudness for the background music only (0...1). Applies live.
+    var musicVolume: Float = 1.0 {
+        didSet { musicVolume = musicVolume.clampedVolume; applyMusicVolume() }
+    }
 
     // Keep effect players alive until they finish, otherwise ARC
     // deallocates them mid-playback and the sound cuts off.
     private var effectPlayers: [AVAudioPlayer] = []
     private var musicPlayer: AVAudioPlayer?
+    // The per-call volume the current music was started with, so live
+    // master/music changes can be re-applied on top of it.
+    private var musicBaseVolume: Float = 1.0
+    /// Name of the track currently playing, so we can avoid restarting it
+    /// when the same track is requested again (e.g. menu screen changes).
+    private(set) var currentMusic: String?
 
     // Cache decoded data so repeated effects don't hit the disk each time.
     private var dataCache: [String: Data] = [:]
@@ -39,8 +78,6 @@ final class SoundManager {
 
     // MARK: - Public API
 
-    /// Play a one-shot sound effect by file name (without extension).
-    /// Multiple effects can play at the same time.
     func play(_ name: String, volume: Float = 1.0) {
         guard isEnabled else { return }
         guard let data = loadData(named: name) else {
@@ -50,7 +87,7 @@ final class SoundManager {
 
         do {
             let player = try AVAudioPlayer(data: data)
-            player.volume = volume
+            player.volume = (masterVolume * sfxVolume * volume).clampedVolume
             player.delegate = cleanupDelegate
             player.prepareToPlay()
             player.play()
@@ -61,20 +98,32 @@ final class SoundManager {
     }
 
     /// Start looping background music. Pass `loops: 0` to play once.
-    func playMusic(_ name: String, volume: Float = 0.5, loops: Int = -1) {
+    /// If `name` is already the current track, this is a no-op (the track
+    /// keeps playing) unless `restart` is true. Switching to a different
+    /// track replaces the old one.
+    func playMusic(_ name: String, volume: Float = 0.5, loops: Int = -1, restart: Bool = false) {
         guard isEnabled else { return }
+
+        if name == currentMusic, musicPlayer?.isPlaying == true, !restart {
+            return
+        }
+
         guard let data = loadData(named: name) else {
             print("SoundManager: music '\(name)' not found in bundle.")
             return
         }
 
+        musicPlayer?.stop()
+
         do {
             let player = try AVAudioPlayer(data: data)
-            player.volume = volume
+            musicBaseVolume = volume
+            player.volume = (masterVolume * musicVolume * volume).clampedVolume
             player.numberOfLoops = loops
             player.prepareToPlay()
             player.play()
             musicPlayer = player
+            currentMusic = name
         } catch {
             print("SoundManager: failed to play music '\(name)': \(error)")
         }
@@ -83,6 +132,7 @@ final class SoundManager {
     func stopMusic() {
         musicPlayer?.stop()
         musicPlayer = nil
+        currentMusic = nil
     }
 
     /// Stop everything immediately.
@@ -96,6 +146,12 @@ final class SoundManager {
 
     private lazy var cleanupDelegate = EffectCleanupDelegate { [weak self] player in
         self?.effectPlayers.removeAll { $0 === player }
+    }
+
+    /// Re-applies the current volume settings to the live music track.
+    private func applyMusicVolume() {
+        let level = isEnabled ? (masterVolume * musicVolume * musicBaseVolume).clampedVolume : 0
+        musicPlayer?.volume = level
     }
 
     private func loadData(named name: String) -> Data? {
@@ -123,6 +179,11 @@ final class SoundManager {
         }
         #endif
     }
+}
+
+private extension Float {
+    /// Keeps a volume in AVAudioPlayer's valid 0...1 range.
+    var clampedVolume: Float { min(max(self, 0), 1) }
 }
 
 // Removes finished effect players so the array doesn't grow forever.

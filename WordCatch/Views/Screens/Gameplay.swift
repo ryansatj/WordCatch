@@ -22,7 +22,6 @@ struct Gameplay: View {
 
     @State private var manager = HandDetectionModel()
     @State private var game = Game()
-
     @State private var cameraReady = false
     @State private var countdownValue: Int? = nil
     @State private var showRoundHeader = false
@@ -57,7 +56,9 @@ struct Gameplay: View {
                     PlayingHUD(mode: mode,
                                scoreP1: game.ScoreP1,
                                scoreP2: game.ScoreP2,
-                               onExit: exit)
+                               onExit: exit,
+                               hands: { manager.tangan },
+                               screenSize: geo.size)
                         .transition(.opacity)
                 }
 
@@ -102,8 +103,12 @@ struct Gameplay: View {
                 if !showTutorial { startSequence() }
             }
             .onChange(of: geo.size) { _, s in game.size = s }
+            .onChange(of: game.remainingSeconds) { _, seconds in
+                if seconds == 5 { SoundManager.shared.play("5second") }
+            }
             .onChange(of: game.isFinished) { _, isFinished in
                 guard isFinished else { return }
+                SoundManager.shared.play("Timesup")
                 withAnimation(.hudReveal) {
                     showHUD = false
                     endFlowStep = .timeUp
@@ -144,6 +149,7 @@ struct Gameplay: View {
         case .learning:
             LearningScreen(
                 category: game.currentCategory,
+                words: game.fallenWords,
                 onPlayAgain: { restart(in: size) },
                 onBackHome: exit
             )
@@ -179,6 +185,7 @@ struct Gameplay: View {
 
     private func runCountdown() {
         Task {
+            SoundManager.shared.play("ready321")
             for n in [3, 2, 1, 0] {
                 countdownValue = n
                 try? await Task.sleep(for: .milliseconds(950))

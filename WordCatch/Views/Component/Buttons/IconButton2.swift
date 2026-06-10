@@ -58,6 +58,7 @@ struct IconButton2: View {
 
     var body: some View {
         Button(action: handleTap) {
+            
             ZStack(alignment: .top) {
                 if hasChunky {
                     ZStack {
@@ -92,6 +93,9 @@ struct IconButton2: View {
     }
 
     private func handleTap() {
+        SoundManager.shared.play("backButton")
+        
+        
         withAnimation(.easeOut(duration: 0.08)) { pressed = true }
         Task {
             try? await Task.sleep(for: .milliseconds(110))

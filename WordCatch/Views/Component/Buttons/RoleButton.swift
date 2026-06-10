@@ -78,7 +78,6 @@ struct RoleButton<Content: View>: View {
         self.content = content
     }
 
-    /// Effective height: explicit override, otherwise the `Size` preset.
     private var resolvedHeight: CGFloat { height ?? size.height }
 
     private let shadowDepth: CGFloat = 4
@@ -173,6 +172,8 @@ struct RoleButton<Content: View>: View {
     }
 
     private func handleTap() {
+        SoundManager.shared.play("PrimaryButton")
+        
         withAnimation(.easeOut(duration: 0.08)) { pressed = true }
         Task {
             try? await Task.sleep(for: .milliseconds(110))
@@ -200,12 +201,9 @@ extension RoleButton where Content == Text {
 
 #Preview {
     VStack(spacing: 18) {
-        // Title-only (unchanged API)
         RoleButton(title: "I'm Ready!", size: .xl, action: {})
 
         RoleButton(title: "Primary Large", size: .lg, action: {})
-
-        // Custom content: image + text
         RoleButton(size: .lg, variant: .secondary, action: {}) {
             HStack(spacing: 10) {
                 Image(systemName: "person.fill")
@@ -213,7 +211,7 @@ extension RoleButton where Content == Text {
             }
         }
 
-        // Custom content: icon only
+
         RoleButton(size: .md, variant: .primary, action: {}) {
             Image(systemName: "airplayvideo")
         }

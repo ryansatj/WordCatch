@@ -55,15 +55,28 @@ final class Game {
     private(set) var currentCategory = WordCategory.animals
     private(set) var remainingSeconds = 120
 
-    let roundDuration: CFTimeInterval = 120
+    // Correct words that actually fell this round, in the order they first
+    // appeared. The dictionary/learning screen shows only these, not the whole
+    // category list.
+    private(set) var fallenWords: [WordMeaning] = []
+
+    let roundDuration: CFTimeInterval = 60   // elder/original default: 10
 
     // MARK: - Tuning knobs
+    //
+    // Two presets:  CURRENT = fast/fun (demo)   |   ELDER = slow/gentle (original)
+    // To go back to the calmer elder pace, just use the commented values.
 
-    private let maxOnScreen = 4
-    private let spawnInterval: ClosedRange<CFTimeInterval> = 2.2...3.4
-    private let fallDuration: ClosedRange<Double> = 5.0...7.0
-    private let catchRadiusFraction: CGFloat = 0.24
-    private let backoffWhenFull: CFTimeInterval = 0.4
+    private let maxOnScreen = 6                                              // elder: 4
+    private let spawnInterval: ClosedRange<CFTimeInterval> = 1.0...1.8       // elder: 2.2...3.4  (gap between words; bigger = fewer words)
+    private let fallDuration: ClosedRange<Double> = 4...5                    // elder: 5.0...7.0  (seconds to reach the bottom; bigger = slower fall)
+    private let catchRadiusFraction: CGFloat = 0.24                          // elder: 0.24       (unchanged; bigger = easier to grab)
+    private let backoffWhenFull: CFTimeInterval = 0.25                       // elder: 0.4
+
+    // Difficulty ramps from 1.0 at the start of a round to `maxDifficulty` at
+    // the end: words fall faster and spawn more often as time runs down.
+    // Set to 1.0 to disable the ramp (constant speed — gentler for elders).
+    private let maxDifficulty: Double = 1.5                                  // elder: 1.0 (no ramp)
 
     // MARK: - State
 
@@ -168,6 +181,7 @@ final class Game {
         isFinished = false
         currentCategory = Self.categories.randomElement() ?? .animals
         remainingSeconds = Int(roundDuration)
+        fallenWords = []
         spawnIn = 0
         spawnLeft = true
         stop()
@@ -180,6 +194,7 @@ final class Game {
         winner = nil
         isFinished = false
         remainingSeconds = Int(roundDuration)
+        fallenWords = []
         spawnIn = 0
         spawnLeft = true
         last = CACurrentMediaTime()
@@ -220,6 +235,13 @@ final class Game {
         }
     }
 
+    // 1.0 at the start of the round, ramping up to `maxDifficulty` at the end.
+    private var difficulty: Double {
+        let elapsed = CACurrentMediaTime() - startedAt
+        let frac = min(1, max(0, elapsed / roundDuration))
+        return 1 + frac * (maxDifficulty - 1)
+    }
+
     private func spawnWordsIfNeeded(deltaTime: CFTimeInterval) {
         spawnIn -= deltaTime
         guard spawnIn <= 0 else { return }
@@ -229,10 +251,19 @@ final class Game {
             return
         }
 
+        let ramp = difficulty
         let x = spawnXPosition()
-        let duration = Double.random(in: fallDuration)
+        let duration = Double.random(in: fallDuration) / ramp   // faster fall as the round goes on
         let speed = CGFloat(Double(size.height) / duration)
         let prompt = currentCategory.randomPrompt()
+
+        // Record correct words as they fall so the dictionary lists exactly the
+        // ones the player saw (no duplicates).
+        if prompt.isCorrect,
+           let meaning = currentCategory.correctWords.first(where: { $0.word == prompt.text }),
+           !fallenWords.contains(where: { $0.word == meaning.word }) {
+            fallenWords.append(meaning)
+        }
 
         words.append(FallingWord(
             text: prompt.text,
@@ -242,7 +273,7 @@ final class Game {
             speed: speed
         ))
         spawnLeft.toggle()
-        spawnIn = .random(in: spawnInterval)
+        spawnIn = .random(in: spawnInterval) / ramp   // and spawn more often
     }
 
     private func spawnXPosition() -> CGFloat {
@@ -277,6 +308,7 @@ final class Game {
             let wordPoint = CGPoint(x: words[i].x, y: words[i].y)
             if palms.contains(where: { hypot(wordPoint.x - $0.x, wordPoint.y - $0.y) < radius }) {
                 words[i].caught = true
+                SoundManager.shared.play(words[i].isCorrect ? "rightCatch" : "wrongCatch")
                 addScore(forWordX: words[i].x, isCorrect: words[i].isCorrect)
             }
         }

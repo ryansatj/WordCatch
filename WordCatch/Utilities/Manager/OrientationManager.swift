@@ -17,10 +17,6 @@ final class OrientationManager {
 
     static let shared = OrientationManager()
 
-    //update
-    
-    // Current allowed orientations. Read by AppDelegate's
-    // supportedInterfaceOrientationsFor:.
     var mask: UIInterfaceOrientationMask = .all
 
     func lockLandscape() {
