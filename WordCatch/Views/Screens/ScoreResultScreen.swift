@@ -40,7 +40,7 @@ public struct ScoreResultScreen: View {
                     Image("SplashMascot")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 140, height: 120)
+                        .frame(width: 120, height: 120)
                         .offset(y: 40)
                     
                     
@@ -50,7 +50,7 @@ public struct ScoreResultScreen: View {
                     Image("SplashMascot")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 140, height: 120)
+                        .frame(width: 120, height: 120)
                         .offset(y: 20)
                     
                     duoScoreContent
