@@ -14,7 +14,7 @@ struct ContentView: View {
 
     @State private var screen: Screen = .splash
     @State private var selectedMode: GameMode = .solo
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion 
 
     private var screenTransition: AnyTransition { .opacity }
     private var screenAnimation: Animation {
