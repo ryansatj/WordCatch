@@ -56,7 +56,9 @@ struct Gameplay: View {
                     PlayingHUD(mode: mode,
                                scoreP1: game.ScoreP1,
                                scoreP2: game.ScoreP2,
-                               onExit: exit)
+                               onExit: exit,
+                               hands: { manager.tangan },
+                               screenSize: geo.size)
                         .transition(.opacity)
                 }
 
@@ -147,6 +149,7 @@ struct Gameplay: View {
         case .learning:
             LearningScreen(
                 category: game.currentCategory,
+                words: game.fallenWords,
                 onPlayAgain: { restart(in: size) },
                 onBackHome: exit
             )

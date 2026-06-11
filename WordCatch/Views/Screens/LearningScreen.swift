@@ -10,6 +10,9 @@ import SwiftUI
 
 struct LearningScreen: View {
     let category: WordCategory
+    /// The correct words that fell this round. Falls back to the full category
+    /// list if somehow nothing was recorded.
+    var words: [WordMeaning] = []
     let onPlayAgain: () -> Void
     let onBackHome: () -> Void
 

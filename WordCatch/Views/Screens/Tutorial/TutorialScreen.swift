@@ -266,11 +266,9 @@ struct TutorialScreen: View {
             )}
         
         for i in words.indices where !words[i].caught {
-            guard words[i].isCorrect else { continue }
-            
             let wp = CGPoint(x: words[i].x, y: words[i].y)
             let isLeft = words[i].x < center
-            
+
             let relevantPalms: [CGPoint]
             if mode == .duo {
                 if isLeft && p1Done { continue }
@@ -279,15 +277,22 @@ struct TutorialScreen: View {
             } else {
                 relevantPalms = openPalms
             }
-            
+
             if relevantPalms.contains(where: { hypot(wp.x - $0.x, wp.y - $0.y) < radius }) {
                 words[i].caught = true
-                handleCatch(isLeftWord: isLeft)
+                handleCatch(isLeftWord: isLeft, isCorrect: words[i].isCorrect)
             }
         }
     }
-    
-    private func handleCatch(isLeftWord: Bool) {
+
+    private func handleCatch(isLeftWord: Bool, isCorrect: Bool) {
+        // Wrong word: give feedback but keep playing — the tutorial only
+        // advances once the player catches a correct word.
+        guard isCorrect else {
+            SoundManager.shared.play("wrongCatch")
+            return
+        }
+
         SoundManager.shared.play("correct")
 
         if mode == .solo {
@@ -295,11 +300,11 @@ struct TutorialScreen: View {
             showFinished()
             return
         }
-        
+
         withAnimation(.spring()) {
             if isLeftWord { p1Done = true } else { p2Done = true }
         }
-        
+
         if p1Done && p2Done {
             showFinished()
         }

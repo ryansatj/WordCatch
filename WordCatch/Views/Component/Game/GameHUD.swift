@@ -130,12 +130,24 @@ struct RoundHeader: View {
 
 struct GameExitButton: View {
     let action: () -> Void
+    /// Live hand snapshots + the full-screen size used to map them, so the
+    /// button can be triggered by hovering an open hand over it (no touch).
+    var hands: () -> [HandSnapshot] = { [] }
+    var screenSize: CGSize = .zero
 
     @State private var progress: CGFloat = 0
     @State private var pressing = false
     @State private var holdTask: Task<Void, Never>? = nil
 
+    // Hand-hover state
+    @State private var frame: CGRect = .zero        // button's frame in screen space
+    @State private var hoverTimer: Timer? = nil
+    @State private var exited = false
+
     private let holdSeconds: Double = 1.0
+    private let hoverHoldSeconds: Double = 1.4      // hold a hand a touch longer to avoid accidental exits
+    private let hoverPadding: CGFloat = 34          // generous hit area around the button
+    private let tickRate: Double = 1.0 / 30.0
     private let height: CGFloat = 44
     private let width: CGFloat = 120
 
@@ -164,8 +176,16 @@ struct GameExitButton: View {
             .animation(.easeInOut(duration: 0.2), value: progress)
         }
         .frame(width: width, height: height)
-        .scaleEffect(pressing ? 0.97 : 1.0)
+        .scaleEffect(pressing || progress > 0 ? 0.97 : 1.0)
         .animation(.easeOut(duration: 0.1), value: pressing)
+        // Track the button's position on screen so we can test palms against it.
+        .background(
+            GeometryReader { geo in
+                Color.clear
+                    .onAppear { frame = geo.frame(in: .global) }
+                    .onChange(of: geo.frame(in: .global)) { _, f in frame = f }
+            }
+        )
         .contentShape(Capsule())
         .gesture(
             DragGesture(minimumDistance: 0)
@@ -177,7 +197,46 @@ struct GameExitButton: View {
                     cancelHold()
                 }
         )
+        .onAppear { startHoverLoop() }
+        .onDisappear { hoverTimer?.invalidate(); hoverTimer = nil }
     }
+
+    // MARK: - Hand hover
+
+    private func startHoverLoop() {
+        hoverTimer?.invalidate()
+        hoverTimer = Timer.scheduledTimer(withTimeInterval: tickRate, repeats: true) { _ in
+            hoverTick()
+        }
+    }
+
+    private func hoverTick() {
+        guard !exited, !pressing else { return }        // touch hold takes priority
+        guard screenSize != .zero, frame != .zero else { return }
+
+        let hitArea = frame.insetBy(dx: -hoverPadding, dy: -hoverPadding)
+        let hovering = hands().contains { h in
+            let p = CGPoint(x: h.palmCenter.x * screenSize.width,
+                            y: (1 - h.palmCenter.y) * screenSize.height)
+            return hitArea.contains(p)
+        }
+
+        if hovering {
+            progress = min(1, progress + CGFloat(tickRate / hoverHoldSeconds))
+            if progress >= 1 { triggerExit() }
+        } else if progress > 0 {
+            // Decay back down when the hand leaves before the hold completes.
+            progress = max(0, progress - CGFloat(tickRate / 0.4))
+        }
+    }
+
+    private func triggerExit() {
+        exited = true
+        hoverTimer?.invalidate()
+        action()
+    }
+
+    // MARK: - Touch hold (fallback)
 
     private func startHold() {
         pressing = true
@@ -212,6 +271,8 @@ struct PlayingHUD: View {
     let scoreP1: Int
     let scoreP2: Int
     let onExit: () -> Void
+    var hands: () -> [HandSnapshot] = { [] }
+    var screenSize: CGSize = .zero
 
     var body: some View {
         VStack {
@@ -224,7 +285,7 @@ struct PlayingHUD: View {
                 }
             }
             Spacer()
-            GameExitButton(action: onExit)
+            GameExitButton(action: onExit, hands: hands, screenSize: screenSize)
                 .padding(.bottom, 20)
         }
         .padding(.horizontal, 20)

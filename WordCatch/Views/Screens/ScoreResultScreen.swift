@@ -1,6 +1,10 @@
 //  ScoreResultScreen.swift
 //  WordCatch
-//  Dipisahkan dari GameOverlays.swift agar lebih modular
+//
+
+
+
+
 import SwiftUI
 
 public struct ScoreResultScreen: View {
@@ -55,14 +59,14 @@ public struct ScoreResultScreen: View {
                     
                     duoScoreContent
                 }
+                .padding(.top, 38)
 
                 RoleButton(title: "Continue", size: .md, action: onContinue)
                     .frame(width: 165)
-                    .padding(.top, 2)
-                    .padding(.bottom, 24)
+                    .offset(y: 18)
             }
             .padding(.horizontal, 48)
-            
+            .padding(.vertical, 12)
         }
     }
 
@@ -79,13 +83,16 @@ public struct ScoreResultScreen: View {
                 .foregroundColor(Color("OrangeBrand"))
                 .contentTransition(.numericText())
         }
+        
         .padding(.horizontal, 44)
         .padding(.vertical, 28)
         .frame(maxWidth: 470)
         .background(RoundedRectangle(cornerRadius: 8).fill(.white))
         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color("OrangeBrand"), lineWidth: 4))
         .shadow(color: .black.opacity(0.18), radius: 4, y: 4)
+        .offset(y: 8)
     }
+    
 
     private var duoScoreContent: some View {
         VStack(spacing: 14) {
@@ -103,7 +110,9 @@ public struct ScoreResultScreen: View {
             HStack(spacing: 22) {
                 scoreCard(title: "PLAYER 1 SCORED", score: scoreP1, highlighted: winner == 0)
                 scoreCard(title: "PLAYER 2 SCORED", score: scoreP2, highlighted: winner == 1)
+                  
             }
+            .offset(y: 8)
         }
     }
 
@@ -129,8 +138,13 @@ public struct ScoreResultScreen: View {
         )
         .shadow(color: .black.opacity(0.18), radius: 3, y: 3)
     }
+
+}
+
+#Preview("Duo", traits: .landscapeRight) {
+    ScoreResultScreen(mode: .duo, winner: 0, scoreP1: 12, scoreP2: 0, onContinue: {})
 }
 
 #Preview("Solo", traits: .landscapeRight) {
-    ScoreResultScreen(mode: .duo, winner: 0, scoreP1: 12, scoreP2: 0, onContinue: {})
+    ScoreResultScreen(mode: .solo, winner: 0, scoreP1: 12, scoreP2: 0, onContinue: {})
 }

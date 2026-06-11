@@ -19,6 +19,10 @@ final class HandDetectionModel: NSObject {
     private let queue = DispatchQueue(label: "hand", qos: .userInteractive)
     private let vision = VisionActor()
 
+    // Backpressure: true while a detection is in flight. Only touched on `queue`,
+    // which is serial, so no extra locking is needed.
+    nonisolated(unsafe) private var isProcessing = false
+
     // MARK: - Cross-frame tracking state
     private var tracked: [TrackedHand] = []
     private var lastFrameTime = CMTime.zero
@@ -59,6 +63,12 @@ final class HandDetectionModel: NSObject {
 extension HandDetectionModel: AVCaptureVideoDataOutputSampleBufferDelegate {
     nonisolated func captureOutput(_ output: AVCaptureOutput, didOutput buffer: CMSampleBuffer,
                                    from connection: AVCaptureConnection) {
+        // Drop this frame if a detection is still running. Without this, frames
+        // pile up on the VisionActor faster than they're processed and we end up
+        // always showing stale results — that's the accumulating "delay".
+        guard !isProcessing else { return }
+        isProcessing = true
+
         if connection.isVideoRotationAngleSupported(90) {
             connection.videoRotationAngle = 90
         }
@@ -72,6 +82,8 @@ extension HandDetectionModel: AVCaptureVideoDataOutputSampleBufferDelegate {
                 self.lastFrameTime = timestamp
                 self.tangan = self.resolve(raw)
             }
+            // Re-open the gate on the capture queue so the next frame is processed.
+            self.queue.async { self.isProcessing = false }
         }
     }
 }
@@ -99,6 +111,25 @@ private extension HandDetectionModel {
             // No sections: keep the 4 highest-confidence
             return Array(raw.sorted { $0.confidence > $1.confidence }.prefix(4))
         }
+
+        // 2) Only genuinely free slots go to new hands, closest (largest) first.
+        let newcomers = candidates.indices
+            .filter { !used.contains($0) }
+            .sorted { handSpan(candidates[$0]) > handSpan(candidates[$1]) }
+        for i in newcomers where selected.count < limit {
+            selected.append(i)
+        }
+
+        return selected.map { candidates[$0] }
+    }
+
+    // Diagonal of the hand's bounding box in normalized (0...1) coordinates —
+    // a cheap proxy for how close the hand is to the camera.
+    func handSpan(_ h: RawHand) -> CGFloat {
+        let xs = h.points.values.map(\.x), ys = h.points.values.map(\.y)
+        guard let minX = xs.min(), let maxX = xs.max(),
+              let minY = ys.min(), let maxY = ys.max() else { return 0 }
+        return hypot(maxX - minX, maxY - minY)
     }
 
 
@@ -213,6 +244,8 @@ actor VisionActor { //refactor 1
         r.maximumHandCount = 4
         return r
     }()
+
+    func setMaxHands(_ n: Int) { request.maximumHandCount = n }
 
     fileprivate func detect(buffer: CMSampleBuffer) -> [RawHand] {
         guard let pixels = CMSampleBufferGetImageBuffer(buffer) else { return [] }
