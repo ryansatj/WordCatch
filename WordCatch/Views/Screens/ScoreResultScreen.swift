@@ -21,6 +21,8 @@ public struct ScoreResultScreen: View {
         return "DRAW!"
     }
 
+    /// Title broken into lines so each renders on its own row reliably,
+    /// instead of depending on a "\n" that can collapse when space is tight.
     private var winnerLines: [String] {
         if mode == .solo { return ["YOUR SCORE"] }
         if winner == 0 { return ["PLAYER 1", "WINS!"] }
@@ -34,20 +36,28 @@ public struct ScoreResultScreen: View {
         ZStack {
             CelebrationBackground()
 
-            VStack(spacing: 16) {
-                Group {
-                    if mode == .solo {
-                        soloScoreCard
-                    } else {
-                        duoScoreContent
-                    }
-                }
-                .overlay(alignment: .top) {
+            VStack(spacing: 18) {
+             
+
+                if mode == .solo {
+                    
                     Image("SplashMascot")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 96, height: 96)
-                        .offset(y: -72)
+                        .frame(width: 120, height: 120)
+                        .offset(y: 40)
+                    
+                    
+                    soloScoreCard
+                } else {
+                    
+                    Image("SplashMascot")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 120, height: 120)
+                        .offset(y: 20)
+                    
+                    duoScoreContent
                 }
                 .padding(.top, 38)
 
@@ -94,7 +104,6 @@ public struct ScoreResultScreen: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                 }
-                .offset(y: 10)
             }
             .multilineTextAlignment(.center)
 

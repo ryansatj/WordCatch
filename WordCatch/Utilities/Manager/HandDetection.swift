@@ -12,15 +12,7 @@ import Vision
 @Observable //final itu gabisa di inherit ke class manapun
 final class HandDetectionModel: NSObject {
     var tangan: [HandSnapshot] = []
-    var gameMode: GameMode = .solo {
-        didSet {
-            // Detect a few more hands than we actually use so the closest-first
-            // selection has real candidates to choose from in a crowd (we keep
-            // 2 solo / 4 duo after picking the closest).
-            let max = gameMode == .duo ? 6 : 4
-            Task { await vision.setMaxHands(max) }
-        }
-    }
+    var gameMode: GameMode = .solo
     let session = AVCaptureSession()
 
     private let output = AVCaptureVideoDataOutput()
@@ -36,18 +28,12 @@ final class HandDetectionModel: NSObject {
     private var lastFrameTime = CMTime.zero
 
     // MARK: - Tuning knobs
-    private let matchThreshold: CGFloat = 0.15   //jarak threshold tangan (bigger = holds identity across faster motion)
+    private let matchThreshold: CGFloat = 0.08   //jarak threshold tangan
     private let maxMissedFrames = 6    //max miss frame
     private let openFlipFrames = 2   // anti flicer 2frame
-    private let minConfidence: Float = 0.5       // drop weak/background detections
-    private let minHandSpan: CGFloat = 0.05      // low floor: rejects garbage but still allows a far lone hand
-    private let stickyRadius: CGFloat = 0.22     // how far a locked hand can move between frames and still keep its slot
     override init() {
         super.init() //NSObject why we use super
-        // Hand pose works fine at VGA; .high (720p/1080p) just makes every
-        // Vision pass far slower for no tracking benefit. This is the main
-        // latency win.
-        session.sessionPreset = .vga640x480
+        session.sessionPreset = .high
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front),
               let input = try? AVCaptureDeviceInput(device: device),
               session.canAddInput(input) else { return }
@@ -118,29 +104,12 @@ private extension HandDetectionModel {
 
     
     func applyCap(_ raw: [RawHand]) -> [RawHand] {
-        let limit = gameMode == .duo ? 4 : 2
-
-        // Drop only clear garbage (weak detections / tiny specks). The floor is
-        // permissive so a single player standing far back is still detected.
-        let candidates = raw.filter {
-            $0.confidence >= minConfidence && handSpan($0) >= minHandSpan
-        }
-
-        var selected: [Int] = []          // indices into `candidates`
-        var used = Set<Int>()
-
-        // 1) Continuity first: every hand we were already tracking claims its
-        //    NEAREST current detection. A locked hand therefore stays on itself
-        //    and never jumps to a different, closer hand on screen.
-        for t in tracked where selected.count < limit {
-            var best: Int? = nil
-            var bestDist = stickyRadius
-            for (i, c) in candidates.enumerated() where !used.contains(i) {
-                let d = hypot(c.palmCenter.x - t.palmCenter.x,
-                              c.palmCenter.y - t.palmCenter.y)
-                if d < bestDist { bestDist = d; best = i }
-            }
-            if let i = best { selected.append(i); used.insert(i) }
+        switch gameMode {
+        case .solo:
+            return Array(raw.sorted { $0.confidence > $1.confidence }.prefix(2))
+        case .duo:
+            // No sections: keep the 4 highest-confidence
+            return Array(raw.sorted { $0.confidence > $1.confidence }.prefix(4))
         }
 
         // 2) Only genuinely free slots go to new hands, closest (largest) first.

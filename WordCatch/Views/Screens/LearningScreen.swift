@@ -16,10 +16,6 @@ struct LearningScreen: View {
     let onPlayAgain: () -> Void
     let onBackHome: () -> Void
 
-    private var displayedWords: [WordMeaning] {
-        words.isEmpty ? category.learningWords : words
-    }
-
 
     @State private var contentHeight: CGFloat = 0
     @State private var viewportHeight: CGFloat = 0
@@ -61,7 +57,7 @@ struct LearningScreen: View {
     private var wordList: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 14) {
-                ForEach(displayedWords) { item in
+                ForEach(category.learningWords) { item in
                     wordRow(item)
                 }
             }

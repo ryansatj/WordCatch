@@ -55,12 +55,7 @@ final class Game {
     private(set) var currentCategory = WordCategory.animals
     private(set) var remainingSeconds = 120
 
-    // Correct words that actually fell this round, in the order they first
-    // appeared. The dictionary/learning screen shows only these, not the whole
-    // category list.
-    private(set) var fallenWords: [WordMeaning] = []
-
-    let roundDuration: CFTimeInterval = 60   // elder/original default: 10
+    let roundDuration: CFTimeInterval = 10
 
     // MARK: - Tuning knobs
     //
