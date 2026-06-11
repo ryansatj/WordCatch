@@ -22,7 +22,6 @@ struct Gameplay: View {
 
     @State private var manager = HandDetectionModel()
     @State private var game = Game()
-
     @State private var cameraReady = false
     @State private var countdownValue: Int? = nil
     @State private var showRoundHeader = false
@@ -103,7 +102,6 @@ struct Gameplay: View {
             }
             .onChange(of: geo.size) { _, s in game.size = s }
             .onChange(of: game.remainingSeconds) { _, seconds in
-                // Fire once as the clock enters the final 5 seconds.
                 if seconds == 5 { SoundManager.shared.play("5second") }
             }
             .onChange(of: game.isFinished) { _, isFinished in

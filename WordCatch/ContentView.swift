@@ -14,13 +14,19 @@ struct ContentView: View {
 
     @State private var screen: Screen = .splash
     @State private var selectedMode: GameMode = .solo
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion 
+
+    private var screenTransition: AnyTransition { .opacity }
+    private var screenAnimation: Animation {
+        reduceMotion ? .easeInOut(duration: 0.2) : .screenSwitch
+    }
 
     var body: some View {
         ZStack {
             switch screen {
             case .splash:
                 SplashScreen { advance(to: .playerSelection) }
-                    .transition(.opacity)
+                    .transition(screenTransition)
             case .playerSelection:
                 PlayerSelectionScreen(
                     onBack: { advance(to: .splash) },
@@ -29,25 +35,25 @@ struct ContentView: View {
                         advance(to: .airplay)
                     }
                 )
-                .transition(.slideForward)
+                .transition(screenTransition)
             case .airplay:
                 AirplayOptionScreen(
                     onBack: { advance(to: .playerSelection) },
                     onContinue: { advance(to: .tutorial) }
                 )
-                .transition(.slideForward)
+                .transition(screenTransition)
             case .tutorial:
                 TutorialCarouselScreen(
                     onBack: { advance(to: .airplay) },
                     onStart: { advance(to: .game) }
                 )
-                .transition(.slideForward)
+                .transition(screenTransition)
             case .game:
                 Gameplay(mode: selectedMode, onExit: { advance(to: .playerSelection) })
-                    .transition(.opacity)
+                    .transition(screenTransition)
             }
         }
-        .animation(.screenSwitch, value: screen)
+        .animation(screenAnimation, value: screen)
         .onAppear(perform: updateMusic)
         .onChange(of: screen) { _, _ in updateMusic() }
     }

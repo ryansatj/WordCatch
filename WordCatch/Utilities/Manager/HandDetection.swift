@@ -12,7 +12,6 @@ import Vision
 @Observable //final itu gabisa di inherit ke class manapun
 final class HandDetectionModel: NSObject {
     var tangan: [HandSnapshot] = []
-    /// Set by Gameplay after start(). Drives zone locking and the hard cap.
     var gameMode: GameMode = .solo
     let session = AVCaptureSession()
 
@@ -21,41 +20,40 @@ final class HandDetectionModel: NSObject {
     private let vision = VisionActor()
 
     // MARK: - Cross-frame tracking state
-    // Previous frame's hands are remembered here so the next frame can match
-    // against them. Mutated only on the main actor, in frame order.
     private var tracked: [TrackedHand] = []
     private var lastFrameTime = CMTime.zero
 
     // MARK: - Tuning knobs
-    /// Max euclidean distance (normalised 0–1) to treat a detection as the
-    /// same hand as a previous-frame hand.
-    private let matchThreshold: CGFloat = 0.08
-    /// A hand kept this many frames after vanishing, then dropped.
-    private let maxMissedFrames = 6
-    /// Frames a new isOpen value must persist before it is accepted. Kept low
-    /// so opening/closing the hand registers almost immediately.
-    private let openFlipFrames = 2
-
+    private let matchThreshold: CGFloat = 0.08   //jarak threshold tangan
+    private let maxMissedFrames = 6    //max miss frame
+    private let openFlipFrames = 2   // anti flicer 2frame
     override init() {
-        super.init()
+        super.init() //NSObject why we use super
         session.sessionPreset = .high
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front),
               let input = try? AVCaptureDeviceInput(device: device),
               session.canAddInput(input) else { return }
+        
+        
+        
         session.addInput(input)
         output.alwaysDiscardsLateVideoFrames = true
+        
+        
         output.setSampleBufferDelegate(self, queue: queue)
         if session.canAddOutput(output) { session.addOutput(output) }
         output.connection(with: .video)?.isVideoMirrored = true
     }
+    
+    
 
     func start() {
-        guard !session.isRunning else { return }
-        let s = session; queue.async { s.startRunning() }
+        guard !session.isRunning else { return } //camera bugs before
+        let s = session; queue.async { s.startRunning() } //async
     }
     func stop() { session.stopRunning() }
 }
-
+//kam
 
 
 extension HandDetectionModel: AVCaptureVideoDataOutputSampleBufferDelegate {
@@ -77,6 +75,7 @@ extension HandDetectionModel: AVCaptureVideoDataOutputSampleBufferDelegate {
         }
     }
 }
+// ret cv2.capture
 
 
 
@@ -97,22 +96,22 @@ private extension HandDetectionModel {
         case .solo:
             return Array(raw.sorted { $0.confidence > $1.confidence }.prefix(2))
         case .duo:
-            // No sections: keep the 4 highest-confidence hands anywhere on screen.
+            // No sections: keep the 4 highest-confidence
             return Array(raw.sorted { $0.confidence > $1.confidence }.prefix(4))
         }
     }
 
 
+    
+    // Identity matching pake distance
     func matchAndBuffer(_ raw: [RawHand]) -> [TrackedHand] {
-        // Identity matching is purely distance-based now; a hand can be tracked
-        // anywhere on screen, including across the centre line.
         var pairs: [(r: Int, t: Int, dist: CGFloat)] = []
         for (ri, rh) in raw.enumerated() {
             for ti in tracked.indices {
                 let dx = rh.palmCenter.x - tracked[ti].palmCenter.x
                 let dy = rh.palmCenter.y - tracked[ti].palmCenter.y
                 let dist = (dx * dx + dy * dy).squareRoot()
-                if dist <= matchThreshold { pairs.append((ri, ti, dist)) }
+                if dist <= matchThreshold { pairs.append((ri, ti, dist)) } //jarak matchthres
             }
         }
         pairs.sort { $0.dist < $1.dist } // greedily claim the closest pairs first
@@ -156,7 +155,7 @@ private extension HandDetectionModel {
         return enforceCap(next)
     }
 
-    /// Guarantees the hard cap holds on the final list even after grace hands
+    // Guarantees the hard cap holds on the final list even after grace hands
     /// are carried over, preferring currently-visible hands. 4 hands in duo
     /// (two players), 2 in solo.
     func enforceCap(_ hands: [TrackedHand]) -> [TrackedHand] {
@@ -165,8 +164,8 @@ private extension HandDetectionModel {
         return Array(hands.sorted { $0.missedFrames < $1.missedFrames }.prefix(limit))
     }
 
-    /// isOpen only flips after `openFlipFrames` consecutive frames agree on the
-    /// new state (requirement 4); a single frame never changes it.
+    // isOpen only flips after `openFlipFrames` consecutive frames agree on the
+    // new state (requirement 4); a single frame never changes it.
     func bufferOpen(_ h: inout TrackedHand, reading: Bool) {
         if reading == h.isOpen {
             h.pendingOpen = h.isOpen
@@ -186,7 +185,7 @@ private extension HandDetectionModel {
 
 
 
-/// A single Vision detection for one frame, before identity is assigned.
+// A single Vision detection for one frame, before identity is assigned.
 private struct RawHand {
     var palmCenter: CGPoint
     var points: [VNHumanHandPoseObservation.JointName: CGPoint]
@@ -194,8 +193,8 @@ private struct RawHand {
     var confidence: Float
 }
 
-/// A hand remembered across frames. `id` is stable for the hand's lifetime;
-/// everything else updates each frame.
+// A hand remembered across frames. `id` is stable for the hand's lifetime;
+//everything else updates each frame.
 private struct TrackedHand {
     let id: UUID
     var palmCenter: CGPoint
@@ -207,7 +206,7 @@ private struct TrackedHand {
 }
 
 
-
+//actor atrian ke ruangan
 actor VisionActor { //refactor 1
     private let request: VNDetectHumanHandPoseRequest = {
         let r = VNDetectHumanHandPoseRequest()
@@ -221,7 +220,7 @@ actor VisionActor { //refactor 1
 
         return (request.results ?? []).compactMap { obs -> RawHand? in
             guard let all = try? obs.recognizedPoints(.all) else { return nil }
-            let pts = all.filter { $0.value.confidence > 0.3 }
+            let pts = all.filter { $0.value.confidence > 0.3 }   //dibawah 0.3 ga keitung
                 .reduce(into: [VNHumanHandPoseObservation.JointName: CGPoint]()) {
                     $0[$1.key] = CGPoint(x: $1.value.x, y: $1.value.y)
                 }
@@ -243,13 +242,25 @@ actor VisionActor { //refactor 1
             guard let t = p[f.0], let m = p[f.1], t.confidence > 0.3, m.confidence > 0.3 else { return false }
             return d(t, w) > d(m, w) * 1.05
         }.count
-        return ext >= 4
+        return ext >= 4   //kalkuus all over again
     }
     private func palm(_ p: [VNHumanHandPoseObservation.JointName: VNRecognizedPoint]) -> CGPoint? {
         let v = [.wrist, .indexMCP, .middleMCP, .ringMCP, .littleMCP]
             .compactMap { p[$0] }.filter { $0.confidence > 0.3 }
         guard !v.isEmpty else { return nil }
         return CGPoint(x: v.reduce(0) { $0 + $1.x } / CGFloat(v.count),
-                       y: v.reduce(0) { $0 + $1.y } / CGFloat(v.count))
-    }
+                       y: v.reduce(0) { $0 + $1.y } / CGFloat(v.count)) // hasolnya titik imaginer
+    } // x pusat, y pusat/n  //titik diskrit
 }
+
+//t = finger tip
+//m = finger pip
+// d(t, w) > d(m, w) * 1.05 why 1.05 if jari melengkung masih kedeteksi jadi ga kaku 180
+
+//ext tangan kebuak kalo 4 jari
+
+
+//$0 titik sementara $1 tiitk saaatini
+
+
+//visiom framewortk kaya mediapipe

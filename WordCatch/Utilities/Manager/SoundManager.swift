@@ -78,9 +78,6 @@ final class SoundManager {
 
     // MARK: - Public API
 
-    /// Play a one-shot sound effect by file name (without extension).
-    /// `volume` is a per-call multiplier on top of `masterVolume * sfxVolume`.
-    /// Multiple effects can play at the same time.
     func play(_ name: String, volume: Float = 1.0) {
         guard isEnabled else { return }
         guard let data = loadData(named: name) else {
